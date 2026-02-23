@@ -1,0 +1,7 @@
+tsc exit: 0
+
+> splova@1.0.0 test
+> jest --passWithNoTests --passWithNoTests
+
+No tests found, exiting with code 0
+test exit: 0

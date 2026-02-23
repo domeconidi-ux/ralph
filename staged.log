@@ -1,0 +1,13 @@
+diff --git a/app/(protected)/_layout.tsx b/app/(protected)/_layout.tsx
+index d3e5e03..a29254e 100644
+--- a/app/(protected)/_layout.tsx
++++ b/app/(protected)/_layout.tsx
+@@ -1,5 +1,8 @@
+ import { Stack } from "expo-router";
+ 
++// TODO US-014: Replace with real auth guard using useAuth hook
++// When session is null → redirect to /(public)/welcome
++// When isLoading → show ActivityIndicator
+ export default function ProtectedLayout() {
+   return <Stack screenOptions={{ headerShown: false }} />;
+ }

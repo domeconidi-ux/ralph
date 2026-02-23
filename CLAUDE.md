@@ -1,23 +1,61 @@
-# Ralph Agent Instructions
+# Ralph Agent Instructions — Splova MVP v2.0
 
-You are an autonomous coding agent working on a software project.
+You are an autonomous coding agent implementing the Splova mobile app.
+The project root is the current working directory (SPLOVA/).
+Read CLAUDE.md in the project root — it contains all architectural rules, stack constraints, and conventions you MUST follow.
 
 ## Your Task
 
-1. Read the PRD at `prd.json` (in the same directory as this file)
-2. Read the progress log at `progress.txt` (check Codebase Patterns section first)
+1. Read the PRD at `ralph/prd.json`
+2. Read the progress log at `ralph/progress.txt` (check Codebase Patterns section first)
 3. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
 4. Pick the **highest priority** user story where `passes: false`
 5. Implement that single user story
-6. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
+6. Run quality checks (see below)
 7. Update CLAUDE.md files if you discover reusable patterns (see below)
 8. If checks pass, commit ALL changes with message: `feat: [Story ID] - [Story Title]`
 9. Update the PRD to set `passes: true` for the completed story
-10. Append your progress to `progress.txt`
+10. Append your progress to `ralph/progress.txt`
+
+## Quality Checks (Splova)
+
+Run these in order. ALL must pass before committing:
+
+```bash
+npx tsc --noEmit          # TypeScript strict check — zero errori tollerati
+npm test -- --passWithNoTests  # Jest unit tests (se esistono)
+```
+
+Se TypeScript fallisce: correggi TUTTI gli errori prima di procedere. MAI usare `// @ts-ignore` o `any` esplicito.
+
+## Reference Repositories
+
+Quando implementi una feature, consulta i repo in `"repository github"/<nome-repo>/` (nota: il path ha uno spazio, usa virgolette).
+
+| Feature | Repo | File chiave da leggere |
+|---|---|---|
+| Setup Expo + Supabase + Auth | `expo-supabase-starter` | `app/_layout.tsx`, `providers/supabase-provider.tsx`, `hooks/useSupabase.ts` |
+| Logica split spese + AI receipt | `spliit` | `src/lib/sharing/expense.ts`, `src/app/groups/[groupId]/expenses/` |
+| Auth + multi-tenant coppia | `basejump` | `supabase/migrations/`, `src/lib/` |
+| OCR scontrini con GPT-4o | `receipt-ocr` | `app/api/`, `lib/ocr.ts` |
+| Algoritmo minimizzazione debiti | `simplify-debts` | `src/simplify.ts` |
+| Pattern RLS TypeScript-safe | `drizzle-supabase-rls` | `src/db/schema.ts`, `src/db/rls.ts` |
+
+Leggi i file rilevanti di questi repo PRIMA di implementare, per seguire pattern già collaudati.
+
+## Regole Architetturali ASSOLUTE (da CLAUDE.md)
+
+- **NO StyleSheet.create** — solo classi NativeWind
+- **NO `any` TypeScript** — strict sempre
+- **NO Firebase** — solo Supabase
+- **RLS obbligatoria** su ogni tabella sensibile
+- **React Hook Form + Zod** su tutti i form
+- **TanStack Query** per tutti i dati Supabase
+- **Componenti funzionali** con hooks, mai classi React
 
 ## Progress Report Format
 
-APPEND to progress.txt (never replace, always append):
+APPEND to `ralph/progress.txt` (never replace, always append):
 ```
 ## [Date/Time] - [Story ID]
 - What was implemented

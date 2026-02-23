@@ -1,0 +1,12 @@
+warning: in the working copy of 'app/_layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/ui/box/index.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/ui/button/index.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/ui/gluestack-ui-provider/index.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/ui/hstack/index.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/ui/index.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/ui/input/index.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/ui/text/index.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'components/ui/vstack/index.tsx', LF will be replaced by CRLF the next time Git touches it
+add exit: 0

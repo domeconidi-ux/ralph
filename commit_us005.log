@@ -1,0 +1,5 @@
+[ralph/splova-mvp-v2 56799f7] feat: [US-005] - Configurare Supabase client
+ 4 files changed, 141 insertions(+)
+ create mode 100644 .env.example
+ create mode 100644 lib/supabase.ts
+exit: 0

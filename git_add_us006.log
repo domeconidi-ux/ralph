@@ -1,0 +1,10 @@
+warning: in the working copy of 'app/_layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'store/authStore.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'store/coupleStore.ts', LF will be replaced by CRLF the next time Git touches it
+[ralph/splova-mvp-v2 c79b648] feat: [US-006] - Configurare Zustand + TanStack Query
+ 5 files changed, 124 insertions(+), 8 deletions(-)
+ create mode 100644 store/authStore.ts
+ create mode 100644 store/coupleStore.ts
+exit: 0

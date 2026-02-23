@@ -1,0 +1,9 @@
+warning: in the working copy of 'constants/categories.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'constants/config.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'constants/pricing.ts', LF will be replaced by CRLF the next time Git touches it
+[ralph/splova-mvp-v2 2546de3] feat: [US-008] - Configurare constants
+ 3 files changed, 80 insertions(+)
+ create mode 100644 constants/categories.ts
+ create mode 100644 constants/config.ts
+ create mode 100644 constants/pricing.ts
+exit: 0

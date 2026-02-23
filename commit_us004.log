@@ -1,0 +1,11 @@
+[ralph/splova-mvp-v2 8a2e2c4] feat: [US-004] - Configurare Gluestack UI
+ 11 files changed, 6098 insertions(+), 3108 deletions(-)
+ create mode 100644 components/ui/box/index.tsx
+ create mode 100644 components/ui/button/index.tsx
+ create mode 100644 components/ui/gluestack-ui-provider/index.tsx
+ create mode 100644 components/ui/hstack/index.tsx
+ create mode 100644 components/ui/index.ts
+ create mode 100644 components/ui/input/index.tsx
+ create mode 100644 components/ui/text/index.tsx
+ create mode 100644 components/ui/vstack/index.tsx
+exit: 0

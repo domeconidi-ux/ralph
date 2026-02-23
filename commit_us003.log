@@ -1,0 +1,7 @@
+[ralph/splova-mvp-v2 91549c6] feat: [US-003] - Configurare NativeWind
+ 7 files changed, 26 insertions(+), 3 deletions(-)
+ create mode 100644 global.css
+ create mode 100644 metro.config.js
+ create mode 100644 nativewind-env.d.ts
+ create mode 100644 tailwind.config.js
+commit exit: 0

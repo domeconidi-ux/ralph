@@ -1,0 +1,23 @@
+repository github/query/packages/preact-query/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/preact-query/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+repository github/query/packages/query-async-storage-persister/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/query-async-storage-persister/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+repository github/query/packages/query-broadcast-client-experimental/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/query-broadcast-client-experimental/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+repository github/query/packages/query-core/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/query-core/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+repository github/query/packages/query-persist-client-core/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/query-persist-client-core/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+repository github/query/packages/query-sync-storage-persister/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/query-sync-storage-persister/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+repository github/query/packages/react-query-devtools/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/react-query-devtools/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+repository github/query/packages/react-query-next-experimental/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/react-query-next-experimental/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+repository github/query/packages/react-query-persist-client/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/react-query-persist-client/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+repository github/query/packages/react-query/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/react-query/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+repository github/query/packages/vue-query/root.tsup.config.js(1,1): error TS1128: Declaration or statement expected.
+repository github/query/packages/vue-query/root.tsup.config.js(1,2): error TS1128: Declaration or statement expected.
+EXIT:2

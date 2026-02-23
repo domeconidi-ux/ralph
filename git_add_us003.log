@@ -1,0 +1,8 @@
+warning: in the working copy of 'app/(public)/welcome.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/_layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'babel.config.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'global.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'metro.config.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nativewind-env.d.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tailwind.config.js', LF will be replaced by CRLF the next time Git touches it
+add exit: 0

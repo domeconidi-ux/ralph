@@ -1,0 +1,22 @@
+[ralph/splova-mvp-v2 8647346] feat: [US-001] - Inizializzare progetto Expo con TypeScript
+ 19 files changed, 11499 insertions(+)
+ create mode 100644 .gitignore
+ create mode 100644 app.json
+ create mode 100644 app/(protected)/(tabs)/_layout.tsx
+ create mode 100644 app/(protected)/(tabs)/expenses.tsx
+ create mode 100644 app/(protected)/(tabs)/goals.tsx
+ create mode 100644 app/(protected)/(tabs)/index.tsx
+ create mode 100644 app/(protected)/(tabs)/profile.tsx
+ create mode 100644 app/(protected)/_layout.tsx
+ create mode 100644 app/(public)/_layout.tsx
+ create mode 100644 app/(public)/welcome.tsx
+ create mode 100644 app/_layout.tsx
+ create mode 100644 assets/adaptive-icon.png
+ create mode 100644 assets/icon.png
+ create mode 100644 assets/splash-icon.png
+ create mode 100644 babel.config.js
+ create mode 100644 expo-env.d.ts
+ create mode 100644 package-lock.json
+ create mode 100644 package.json
+ create mode 100644 tsconfig.json
+EXIT:0

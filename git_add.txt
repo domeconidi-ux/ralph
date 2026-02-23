@@ -1,0 +1,16 @@
+warning: in the working copy of 'app.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(protected)/(tabs)/_layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(protected)/(tabs)/expenses.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(protected)/(tabs)/goals.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(protected)/(tabs)/index.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(protected)/(tabs)/profile.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(protected)/_layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(public)/_layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/(public)/welcome.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/_layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'babel.config.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'expo-env.d.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tsconfig.json', LF will be replaced by CRLF the next time Git touches it
+EXIT:0
