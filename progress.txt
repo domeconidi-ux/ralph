@@ -1,3 +1,39 @@
+## 2026-02-24 - US-033
+- Created components/expenses/ExpenseCard.tsx
+- Props: expense: ExpenseRow (from @/hooks/useExpenses — has display fields description/category/date/split_type), onPress: () => void
+- Used ExpenseRow (not Expense from splitAlgorithm) because Expense is a minimal algorithm type without display fields
+- Category emoji + colored bubble: CATEGORIES.find(c => c.id === expense.category) → emoji, colore; fallback "📦" / "#A8A8A8"
+- Colored bubble background: `${categoryColor}22` hex alpha pattern (from US-026)
+- Amount color: green (#16A34A) if expense.paid_by === userId (from useAuthStore), gray (#6B7280) otherwise
+- Split type badge: SPLIT_TYPE_LABELS Record maps equal→"50/50", proportional→"Prop.", custom→"Custom"; fallback to raw string
+- Touchable feedback: Pressable style callback `({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]`
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: 6438078
+- **Learnings for future iterations:**
+  - Use ExpenseRow (from hooks/useExpenses) not Expense (from lib/splitAlgorithm) for display components — Expense is a minimal algorithm-only type
+  - Pressable style callback for press feedback: `style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}` — array form is valid StyleProp<ViewStyle>
+  - useAuthStore() inside a display component is fine for determining "is this mine" coloring — no prop drilling needed
+  - `${color}22` hex alpha pattern is reusable across components for subtle tinted backgrounds (established in US-026, used in US-029, US-033)
+---
+
+## 2026-02-24 - US-032
+- Created hooks/useExpenses.ts
+- Exported ExpenseSplitRow and ExpenseRow interfaces for use in UI components
+- useQuery key: ['expenses', coupleId], enabled: !!coupleId
+- fetchExpenses: select with nested expense_splits relation, order by date desc, limit 50
+- toExpenseModel: maps DB snake_case row (paid_by → paidBy, user_id → userId) to Expense interface from lib/splitAlgorithm
+- balance: calculateBalance(expenses.map(toExpenseModel), userId) — 0 when userId missing
+- invalidate(): queryClient.invalidateQueries({ queryKey: ['expenses', coupleId] }) — call from mutation handlers to refresh list
+- Exposed: expenses (raw ExpenseRow[]), isLoading, error, refetch, balance, invalidate
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: 5d4a4e8
+- **Learnings for future iterations:**
+  - Supabase nested relation syntax in select: `"expense_splits(id, user_id, amount, percentage)"` — returns array for one-to-many relations
+  - Map DB snake_case to camelCase model before passing to pure algorithm functions (paid_by → paidBy, user_id → userId)
+  - useQueryClient() + invalidateQueries pattern: expose invalidate() from the hook so mutation handlers can call it without needing to know the query key
+  - Number() conversion on Supabase numeric columns is safe — handles both number and string-encoded numerics
+---
+
 ## 2026-02-24 - US-031
 - Created app/(protected)/expense/add.tsx — full "Nuova spesa" form screen
 - Form fields: importo (decimal-pad TextInput → parseFloat), descrizione, CategoryPicker, data (default today YYYY-MM-DD), SplitSelector
