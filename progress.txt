@@ -1,0 +1,420 @@
+## 2026-02-24 - US-024
+- Created app/(protected)/onboarding/health-score-quiz.tsx
+- Multi-step quiz component iterating over all 6 HEALTH_SCORE_QUESTIONS from @/constants
+- State: currentStep (0-indexed), answers (Record<string, number> — questionId → score)
+- Animated slide using Animated.Value + useRef: slide-out then slide-in on step change
+- Forward (direction=1): animates translateX to -400, resets to 400, then animates back to 0
+- Backward (direction=-1): animates translateX to +400, resets to -400, then animates back to 0
+- Progress bar: `style={{ width: `${progressPercent}%` }}` (percentage string as DimensionValue in RN)
+- 'Indietro' button: renders transparent when step=0 (disabled prop) to maintain layout space
+- Options: selectable card (Pressable) with indigo border/bg when isSelected (score match)
+- isSelected uses score comparison (safe since all options per question have unique scores 0/25/50/100)
+- After last question: router.replace("/(protected)/(tabs)/") — result screen in future story
+- TypeScript: SUCCESS (exit 0), Jest: 18/18 PASS
+- Committed: (see git)
+- **Learnings for future iterations:**
+  - Animated slide transition: use Animated.timing().start(callback) → setValue(inValue) → setCurrentStep → Animated.timing() in the callback (not a second start()) — avoids flash
+  - Progress bar with dynamic percentage: use `style={{ width: \`${n}%\` }}` — React Native accepts percentage strings as DimensionValue
+  - Use `text-transparent` with same layout as active label for invisible-but-layout-preserving back button on first step
+  - After all quiz questions answered, navigate to tabs — result screen (save to DB, display score) belongs in next story
+---
+
+## 2026-02-24 - US-023
+- Created lib/healthScore.ts with three pure functions: calculateHealthScore, getScoreLabel, getCoupleScore
+- calculateHealthScore(answers: Record<string, number>): averages all provided scores (Object.values), returns 0 if empty, rounds with Math.round
+- getScoreLabel(score): returns { label, color, description } — Ottimo (>=80, green), Buono (>=60, blue), Da migliorare (>=40, amber), Critico (<40, red)
+- getCoupleScore(scoreA, scoreB): simple average rounded to nearest integer (equal weights = media pesata 50/50)
+- Created __tests__/lib/healthScore.test.ts with 18 test cases covering all functions and edge cases
+- Fixed babel.config.js: nativewind/babel preset requires react-native-worklets which is absent in Jest — skip it when NODE_ENV=test using `api.cache(() => process.env.NODE_ENV)` + `process.env.NODE_ENV === "test"` guard
+- TypeScript: SUCCESS (exit 0), Jest: 18/18 PASS
+- Committed: 9c94fca
+- **Learnings for future iterations:**
+  - nativewind/babel preset pulls in react-native-worklets/plugin which is NOT installed — must be excluded in Jest (NODE_ENV=test); use `api.cache(() => process.env.NODE_ENV)` (NOT api.cache(true)) when calling process.env in babel.config.js
+  - lib/healthScore.ts imports NO React Native or @/ dependencies — pure math only — making it trivially testable in Jest without module mapping issues
+  - Jest test files in __tests__/lib/ must import lib files with relative paths (../../lib/X) since jest-expo does NOT auto-map @/ aliases
+---
+
+## 2026-02-24 - US-022
+- Created constants/healthScoreQuestions.ts
+- Defined QuizCategory union type: abitudini_risparmio | gestione_debiti | comunicazione_coppia | obiettivi_finanziari
+- Defined QuizOption interface: { value: string; label: string; score: number }
+- Defined QuizQuestion interface: { id, text, options: QuizOption[], category: QuizCategory }
+- Added HEALTH_SCORE_QUESTIONS array with 6 questions: 2 abitudini_risparmio, 1 gestione_debiti, 2 comunicazione_coppia, 1 obiettivi_finanziari
+- Each question has exactly 4 options with scores 0, 25, 50, 100
+- Updated constants/index.ts: added `export * from "./healthScoreQuestions"`
+- TypeScript: SUCCESS (exit 0), Jest: SUCCESS (no tests)
+- **Learnings for future iterations:**
+  - HEALTH_SCORE_QUESTIONS is the single source of truth for quiz content — components should import from @/constants, not define questions inline
+  - QuizCategory union type enables TypeScript exhaustiveness checks when mapping categories to UI labels/colors
+---
+
+## 2026-02-24 - US-021
+- Created supabase/migrations/003_health_score.sql
+- Table health_score_results: id (uuid PK, gen_random_uuid()), user_id (uuid FK auth.users CASCADE), couple_id (uuid nullable FK couples SET NULL), score (integer CHECK 0-100), answers (jsonb DEFAULT '{}'), created_at (timestamptz)
+- Performance indexes on user_id and couple_id
+- RLS enabled; SELECT policy allows own rows OR rows where couple_id matches get_user_couple_id() (partner in same couple); INSERT policy enforces user_id = auth.uid()
+- Reuses existing get_user_couple_id() SECURITY DEFINER helper from 002_couples.sql for efficient couple membership lookup
+- Rollback section included as SQL comments at end of file
+- TypeScript: SUCCESS (exit 0), Jest: SUCCESS (no tests)
+- Committed: 9aacbb5
+- **Learnings for future iterations:**
+  - get_user_couple_id() helper from 002_couples.sql is available for any table needing couple membership checks — avoids repeated subqueries in RLS policies
+  - couple_id FK uses ON DELETE SET NULL (not CASCADE) so health score data is preserved if a couple is deleted
+  - For partner visibility in RLS: `couple_id IS NOT NULL AND couple_id = get_user_couple_id()` — always guard against NULL before comparing couple_id
+---
+
+## 2026-02-24 - REFACTOR-02
+- Audited error handling on all 3 auth/couple screens: sign-in, sign-up, join-couple
+- Fixed sign-up.tsx: was exposing raw `error.message` from Supabase — normalized to "Registrazione non riuscita. Riprova." (consistent with sign-in's "Credenziali non valide" pattern)
+- Audited form patterns: all 3 forms use identical RHF + Zod pattern (resolver, handleSubmit, formState.errors, Controller) — no changes needed
+- Audited hooks: useAuth.ts and useCouple.ts serve distinct concerns (auth subscription vs TanStack Query + Zustand sync) — no duplicate utility functions found
+- Audited SQL migrations: 001_profiles.sql and 002_couples.sql both have uniform structure (header comment, UP section, numbered steps, ROLLBACK section) — no changes needed
+- Created lib/schemas/couple.ts: extracted joinCoupleSchema + JoinCoupleFormData from inline definition in join-couple.tsx; added createCoupleSchema for future use
+- Updated join-couple.tsx: removed inline schema + z import, now imports from @/lib/schemas/couple
+- TypeScript: SUCCESS (exit 0), Jest: SUCCESS (no tests)
+- **Learnings for future iterations:**
+  - Always normalize auth error messages to fixed Italian strings — never expose raw error.message from Supabase to users
+  - All Zod schemas for forms must live in lib/schemas/ (auth.ts for auth, couple.ts for couple features) — never define inline in screen files
+  - lib/schemas/couple.ts is the home for couple-domain schemas (joinCoupleSchema, createCoupleSchema)
+---
+
+## 2026-02-24 - US-020
+- Created app/(public)/join/[code].tsx — deep link handler for invite codes
+- `app.json` already had `scheme: "splova"` — no changes needed (Expo Router auto-maps paths from file structure)
+- join/[code].tsx reads code from useLocalSearchParams<{ code: string }>(), normalizes to .toUpperCase()
+- If authenticated: stores code in pendingInviteCode (Zustand), navigates to /onboarding/join-couple (code pre-filled)
+- If not authenticated: stores code in pendingInviteCode, shows landing page with code displayed + "Crea account" / "Ho già un account" buttons
+- Added pendingInviteCode: string | null + setPendingInviteCode to coupleStore.ts; reset() now clears it too
+- Updated app/(public)/_layout.tsx: added usePathname() check — authenticated users are NOT redirected on /join/* routes (deep link handler owns its routing)
+- Updated join-couple.tsx: reads pendingInviteCode from store as defaultValues.code; clears it after successful join
+- Updated sign-up.tsx: after sign-up, checks pendingInviteCode; if present → router.replace to join-couple, else → couple-setup
+- Updated sign-in.tsx: after sign-in, checks pendingInviteCode; if present → router.replace to join-couple, else → /(tabs)/
+- TypeScript: SUCCESS (EXIT_CODE=0), Jest: SUCCESS (no tests)
+- Committed: 7db371c
+- **Learnings for future iterations:**
+  - (public) layout redirect intercepts ALL authenticated users on public routes — use usePathname() to exempt specific routes that need custom auth handling
+  - Zustand is the right tool for passing ephemeral state across auth flow boundaries (e.g. pendingInviteCode survives navigation to sign-up and back)
+  - join/[code].tsx placed in app/(public)/join/[code].tsx — Expo Router strips group segments so deep link splova://join/CODE correctly maps to this file
+  - For prd.json updates: the top-level key is "userStories" (not "stories")
+---
+
+## 2026-02-24 - US-019
+- Replaced stub app/(protected)/onboarding/join-couple.tsx with full implementation
+- Single-step form: one TextInput for the 8-char invite code
+- Code input: autoCapitalize="characters", onChangeText forces .toUpperCase(), maxLength=8
+- Zod schema: z.string().length(8).regex(/^[A-Z0-9]{8}$/) — covers both length and alphanum validation
+- Submit flow: (1) lookup invite_codes by code; (2) check used_by IS NULL; (3) check expires_at > now(); (4) insert couple_members role=partner; (5) update invite_codes.used_by + used_at; (6) router.replace to tabs
+- Clear error messages for: code not found, code already used, code expired
+- update invite_codes failure is non-fatal (membership already inserted) — logs warning and continues
+- TypeScript: SUCCESS, Jest: SUCCESS (no tests)
+- Committed: fc20aa2
+- **Learnings for future iterations:**
+  - For prd.json updates: top-level key is "userStories" (not "stories")
+- (public) layout: use usePathname() to exempt specific public routes from the auth redirect (e.g. deep link handlers)
+- pendingInviteCode in Zustand coupleStore is the pattern for passing ephemeral state across auth flow navigation boundaries
+- For invite code lookup: query by .eq("code", code).single() — if error or null, code doesn't exist
+  - Check used_by and expires_at client-side after fetch rather than relying solely on RLS USING clause (RLS UPDATE policy allows unclaimed+unexpired, but SELECT policy allows members — a fresh partner isn't a member yet, so the select may rely on the public/anon key access or the update RLS update_claim policy which uses USING(used_by IS NULL AND expires_at > now()))
+  - autoCapitalize="characters" on TextInput + onChangeText forcing .toUpperCase() gives seamless auto-uppercase UX
+  - Non-fatal DB steps: if update of invite_codes fails after membership insert, log warning and navigate — don't block user
+---
+
+## 2026-02-24 - US-018
+- Replaced stub app/(protected)/onboarding/create-couple.tsx with full implementation
+- Installed expo-clipboard (--legacy-peer-deps) for Clipboard.setStringAsync()
+- Two-step UI: Step 1 = form with optional couple_name field; Step 2 = generated code display
+- Form uses React Hook Form + Zod (z.string().max(50)) — empty string treated as null for DB
+- Submit flow: (1) generateInviteCode() → 8-char UPPERCASE alphanumeric; (2) insert couples; (3) insert couple_members role=owner; (4) insert invite_codes with expires_at = now+7 days
+- Code reveal screen: large code display, "Copia codice" (Clipboard.setStringAsync), "Condividi link" (Share.share with splova://join/[code] deep link), "Continua senza partner" (router.replace to tabs)
+- Both "Continua senza partner" buttons (form step and code step) navigate to /(protected)/(tabs)/
+- APP_SCHEME imported from @/constants (re-exports config.ts)
+- TypeScript: SUCCESS, Jest: SUCCESS (no tests)
+- Committed: 5bad9e5
+- **Learnings for future iterations:**
+  - expo-clipboard must be explicitly installed (not auto-bundled in SDK 54 managed workflow package.json)
+  - expo-clipboard import: `import * as Clipboard from "expo-clipboard"` then `Clipboard.setStringAsync(value)`
+  - Two-step UI (form → result) pattern: use `useState<string | null>(null)` for generatedCode; if truthy render result screen, else render form
+  - z.string().max(50) (not optional()) keeps Controller value typed as string — handle empty→null in submit handler with `.trim() || null`
+  - Supabase multi-step insert: insert couples → get id → insert couple_members → insert invite_codes; abort on any error with setApiError
+---
+
+## 2026-02-24 - US-017
+- Replaced stub app/(protected)/onboarding/couple-setup.tsx with full implementation
+- useCouple() hook provides hasCouple + isLoading; useEffect redirects to /(protected)/(tabs)/ when hasCouple is true
+- Shows ActivityIndicator while loading; returns null while redirect fires
+- Two Pressable options: "Crea la tua coppia" → router.push("/onboarding/create-couple"), "Unisciti alla coppia del partner" → router.push("/onboarding/join-couple")
+- Created stubs app/(protected)/onboarding/create-couple.tsx and join-couple.tsx (required for typedRoutes to compile)
+- TypeScript: SUCCESS, Jest: SUCCESS (no tests)
+- Committed: 6950ed3
+- **Learnings for future iterations:**
+  - router.replace("/(protected)/(tabs)/") is the correct typed Href for the tabs root (group prefix required)
+  - Always create stub screens for push() destinations before running tsc — typedRoutes validates all route targets
+  - useEffect([isLoading, hasCouple]) + return null guard prevents flash of onboarding content before redirect fires
+---
+
+## 2026-02-23 - US-016
+- Created hooks/useCouple.ts
+- Exported Couple and Profile interfaces from store/coupleStore.ts for reuse
+- fetchCoupleData(userId): queries couple_members → gets coupleId → parallel fetch couple + all members → resolves partner profile
+- useQuery key: ['couples', userId], enabled: !!userId
+- useEffect syncs query.data into Zustand coupleStore (setCouple + setPartner) on data change
+- Returns: couple, partner, isLoading, hasCouple, refetch
+- TypeScript: SUCCESS, Jest: SUCCESS (no tests)
+- Committed: cbe7c84
+- **Learnings for future iterations:**
+  - Export Couple/Profile interfaces from coupleStore.ts so hooks can import them (avoids duplicate type definitions)
+  - TanStack Query v5: no onSuccess option — use useEffect([query.data]) to sync into Zustand
+  - Multi-step Supabase queries (membership → couple → partner) done with sequential + parallel Promise.all where possible
+  - Cast Supabase results explicitly (e.g. `as Couple`) since client has no Database generic type parameter
+  - useQuery<CoupleData | null> generic ensures return type is correct for callers
+---
+
+## 2026-02-23 - US-015
+- Created supabase/migrations/002_couples.sql
+- Table couples: id (uuid PK, gen_random_uuid()), name (text nullable), created_by (uuid FK auth.users RESTRICT), created_at (timestamptz)
+- Table couple_members: id (uuid PK), couple_id (FK couples CASCADE), user_id (FK auth.users CASCADE), role CHECK IN ('owner','partner'), joined_at; UNIQUE(couple_id, user_id)
+- Table invite_codes: id (uuid PK), couple_id (FK couples CASCADE), code (text UNIQUE, CHECK length=8), created_by (FK auth.users RESTRICT), used_by (uuid nullable FK auth.users SET NULL), expires_at, used_at
+- Performance indexes on couple_members(user_id), couple_members(couple_id), invite_codes(code), invite_codes(couple_id)
+- RLS enabled on all 3 tables; helper SECURITY DEFINER function get_user_couple_id() for efficient membership checks
+- RLS policies: couples (select_member, insert_auth, update_owner), couple_members (select_own_couple, insert_own, delete_own), invite_codes (select_member, insert_owner, update_claim)
+- Rollback section included as SQL comments at end of file
+- TypeScript: SUCCESS, Jest: SUCCESS (no tests)
+- Committed: ce312fb
+- **Learnings for future iterations:**
+  - SECURITY DEFINER helper function get_user_couple_id() avoids N+1 subqueries in RLS policies — use helper functions for repeated membership lookups
+  - invite_codes UPDATE policy uses USING(used_by IS NULL AND expires_at > now()) so only unclaimed/unexpired codes can be updated by anyone, WITH CHECK(used_by = auth.uid()) ensures the claimer sets themselves
+  - couple_members INSERT policy: WITH CHECK(user_id = auth.uid()) — users can only insert their own membership, covering both couple creation (owner inserts self) and invite acceptance (partner inserts self)
+  - Tables with CASCADE FK on couple_id mean deleting a couple auto-removes members and invite codes
+---
+
+## 2026-02-23 - US-014
+- Updated app/_layout.tsx: extracted RootLayoutNav inner component to call useAuth() for global auth initialization
+- Updated app/(protected)/_layout.tsx: reads useAuthStore; shows ActivityIndicator while isLoading; redirects to /(public)/welcome via useEffect when session is null; returns null while redirect is in-flight
+- Updated app/(public)/_layout.tsx: reads useAuthStore; shows ActivityIndicator while isLoading; redirects to /(tabs)/ via useEffect when session exists
+- TypeScript: SUCCESS, Jest: SUCCESS (no tests)
+- Committed: 530f854
+- **Learnings for future iterations:**
+  - useAuth() must be called in root _layout.tsx (via inner RootLayoutNav) to initialize auth state before child layouts render
+  - Child layouts should use useAuthStore() directly (not useAuth()) to avoid creating duplicate Supabase subscriptions
+  - Pattern: useEffect([isLoading, session]) + router.replace() + return null while redirect — prevents flash of protected content
+  - /(public)/welcome is a valid typed Href in Expo Router v6 with typedRoutes: true (group prefix included)
+---
+
+## 2026-02-23 - US-013
+- Created hooks/useAuth.ts
+- On mount: calls supabase.auth.getSession() to initialize user/session/isLoading in Zustand
+- Subscribes to supabase.auth.onAuthStateChange() to keep state current; unsubscribes on unmount
+- Exposes: user, session, isLoading, signOut()
+- signOut() calls supabase.auth.signOut() then calls store logout() to reset user/session to null
+- TypeScript: SUCCESS, Jest: SUCCESS (no tests)
+- Committed: c4f9b66
+- **Learnings for future iterations:**
+  - hooks/ directory must be created manually (doesn't exist by default)
+  - setLoading(false) must be called both in getSession() .then() and in onAuthStateChange() callback to cover all paths
+  - Use the store's logout() action (not setUser(null)/setSession(null) individually) for atomic reset
+---
+
+## 2026-02-23 - US-012
+- Replaced stub app/(public)/sign-in.tsx with full implementation
+- Form fields: email, password with React Hook Form + zodResolver(signInSchema)
+- Calls supabase.auth.signInWithPassword() on submit
+- Error handling: shows 'Credenziali non valide' on any auth error
+- Loading: isSubmitting disables button and shows ActivityIndicator
+- Navigates to /(tabs)/ via router.replace() on success (replace prevents back-nav to sign-in)
+- 'Hai dimenticato la password?' placeholder link visible (Pressable, no action yet)
+- Link to sign-up screen at the bottom
+- TypeScript: SUCCESS, Jest: SUCCESS (no tests)
+- Committed: f3e8e56
+- **Learnings for future iterations:**
+  - Use router.replace() not router.push() after login — prevents back navigation to auth screens
+  - router.replace('/(tabs)/') navigates to the protected tabs dashboard (index.tsx)
+  - Error message from Supabase auth can vary — always show a fixed friendly message like 'Credenziali non valide' instead of raw error.message
+---
+
+## 2026-02-23 - US-011
+- Implemented app/(public)/sign-up.tsx: full form with display_name, email, password, confirm_password
+- Used React Hook Form + zodResolver(signUpSchema) for validation
+- Calls supabase.auth.signUp() with display_name in user metadata options
+- Loading state: isSubmitting from RHF disables button and shows ActivityIndicator
+- API errors shown in red box below form fields
+- Navigates to /onboarding/couple-setup on success
+- Created app/(protected)/onboarding/couple-setup.tsx stub (required for typedRoutes to resolve push target)
+- TypeScript: SUCCESS, Jest: SUCCESS (no tests)
+- Committed: fc6d786
+- **Learnings for future iterations:**
+  - app/(protected)/onboarding/couple-setup.tsx → URL is /onboarding/couple-setup (group segment stripped)
+  - RHF isSubmitting is true during async onSubmit — use it directly for loading/disabled state
+  - supabase.auth.signUp options.data passes custom user metadata (display_name) to trigger handle_new_user()
+---
+
+## 2026-02-23 - US-010
+- Updated app/(public)/welcome.tsx: logo "Splova", tagline "Finanze di coppia senza conflitti", two CTA buttons with useRouter navigation
+- Created app/(public)/sign-up.tsx and sign-in.tsx as stubs (required for expo-router typed routes to accept the push() calls)
+- All styling via NativeWind className — no StyleSheet.create used
+- TypeScript: SUCCESS (exit 0), Jest: SUCCESS (no tests)
+- Committed: dec69f1
+- **Learnings for future iterations:**
+  - With typedRoutes: true, router.push() to non-existent routes causes TS errors — create stub files for destination routes even if not fully implemented
+  - NativeWind `gap-4` works on View for spacing between children (React Native Flexbox supports gap in RN 0.71+)
+---
+
+## 2026-02-23 - US-009
+- Created supabase/migrations/001_profiles.sql (first migration)
+- Table profiles: id (uuid FK auth.users CASCADE), display_name (text NOT NULL DEFAULT ''), avatar_url (text NULL), created_at/updated_at (timestamptz)
+- RLS enabled with 3 policies: profiles_select_own, profiles_update_own, profiles_insert_own
+- Trigger handle_new_user() SECURITY DEFINER: auto-creates profile on auth.users INSERT, uses display_name from user metadata or email prefix as fallback
+- Trigger profiles_set_updated_at: auto-updates updated_at on UPDATE
+- Rollback section included as SQL comments at end of file
+- TypeScript: SUCCESS (no TS files changed), Jest: SUCCESS (no tests)
+- **Learnings for future iterations:**
+  - SQL-only migrations don't affect TypeScript checks — still run tsc to confirm no regressions
+  - SECURITY DEFINER on trigger function is required so handle_new_user() can INSERT profiles bypassing RLS
+  - Use COALESCE(raw_user_meta_data->>'display_name', split_part(email, '@', 1)) for sensible default display_name
+  - Use DROP TRIGGER IF EXISTS before CREATE TRIGGER to make migrations idempotent
+---
+
+## Codebase Patterns
+- Bash tool runs in MINGW64 on Windows but output is NOT returned to caller — redirect all output to files with `> file.log 2>&1` then read with Read tool
+- Use `&& echo "SUCCESS" >> out.log || echo "FAILED" >> out.log` pattern to capture exit status reliably
+- The SPLOVA root IS the app root (not a nested splova/ subdirectory)
+- tsconfig.json MUST have `"exclude": ["node_modules", "repository github", "ralph", "tasks", "documentazione"]` to avoid TS errors from reference repos
+- package.json jest config MUST have `testPathIgnorePatterns` with `/repository github/` etc. to avoid Jest scanning reference repos
+- Expo SDK 54 uses expo-router ~6.0.0 (NOT v4 as in CLAUDE.md), React 19.1.0, RN 0.81.4
+- Version pinning from reference repo `expo-supabase-starter`: expo-constants ~18.0.7, expo-linking ~8.0.7, expo-splash-screen ~31.0.8, expo-status-bar ~3.0.7, react-native-safe-area-context ~5.6.0, react-native-screens ~4.16.0
+- npm install requires `--legacy-peer-deps` for this project
+- Git working directory: `/c/Users/Tempocasa P.ta Volta/SPLOVA` (bash uses forward slashes despite Windows)
+- Branch: `ralph/splova-mvp-v2` (already created)
+- NativeWind v4 setup: global.css + metro.config.js withNativeWind + babel preset nativewind/babel + tailwind.config.js with nativewind/preset
+- NativeWind v4 does NOT need react-native-reanimated as peer dep (only tailwindcss)
+- Gluestack UI v3: uses @gluestack-ui/core@^3 (not @gluestack-ui/themed v2). Components are source code, not package imports
+- @/* path alias already configured in tsconfig.json from US-001 setup
+- Zod v4 (latest): z.number() does NOT support invalid_type_error option. Use chain: z.number().positive("msg")
+- constants/ always has an index.ts re-exporting all modules; import via `@/constants` not individual files
+- tailwind.config.js content covers only UI dirs: ./app/**/* and ./components/**/* (not lib/, store/, hooks/)
+- app.json has typedRoutes: true (expo-router typed routes enabled — use typed Href where needed)
+- Clean log files after use — don't commit .log files to git
+- All Zod schemas live in lib/schemas/: auth.ts for auth screens, couple.ts for couple features — never define inline in screen files
+- Auth error messages must always be normalized fixed Italian strings (never raw error.message from Supabase)
+- Form pattern (RHF + Zod): `useForm<T>({ resolver: zodResolver(schema) })` → `control, handleSubmit, formState: { errors, isSubmitting }` → Controller per field → apiError state for API-level errors
+- babel.config.js: use `api.cache(() => process.env.NODE_ENV)` (NOT api.cache(true)) when conditionally excluding presets by env; nativewind/babel must be skipped in Jest (NODE_ENV=test) as it requires react-native-worklets which is not installed
+- Jest test files in __tests__/: use relative imports (../../lib/X) for lib/ files — jest-expo does NOT auto-map @/ tsconfig path aliases
+---
+
+# Ralph Progress Log
+Started: Mon Feb 23 11:50:32     2026
+---
+
+## 2026-02-23 - REFACTOR-01
+- Audited all config files: tsconfig.json, babel.config.js, metro.config.js, tailwind.config.js — no duplications or inconsistencies found
+- Audited constants/: types and structure correct; added constants/index.ts re-exporting all modules
+- Audited all _layout.tsx files: uniform structure, clean imports confirmed
+- Audited all components/ui/*, lib/*, store/* files: no unused imports found
+- TypeScript: SUCCESS (exit 0)
+- Jest: "No tests found, exiting with code 0" (SUCCESS)
+- **Learnings for future iterations:**
+  - Always add constants/index.ts so imports use `@/constants` not `@/constants/config` etc.
+  - Use `&& echo "SUCCESS" >> log || echo "FAILED" >> log` for reliable exit code capture in MINGW64
+  - app.json typedRoutes: true is already enabled — future route navigation should use typed Href<Route>
+---
+
+## 2026-02-23 - US-008
+- Created constants/config.ts: APP_NAME, SUPABASE_URL/ANON_KEY (process.env ?? ''), APP_VERSION, APP_SCHEME
+- Created constants/categories.ts: 8 categories (Casa, Cibo, Trasporti, Salute, Svago, Shopping, Viaggi, Altro) with id/nome/emoji/colore
+- Created constants/pricing.ts: FREE_PLAN, PREMIUM_PLAN with Plan interface and LIMITS object
+- TypeScript: exit 0
+- Committed: 2546de3
+---
+
+## 2026-02-23 - US-007
+- Installed react-hook-form, zod@4.3.6, @hookform/resolvers (--legacy-peer-deps)
+- Created lib/schemas/auth.ts: signUpSchema and signInSchema with Zod v4
+- Created lib/schemas/expense.ts: expenseSchema placeholder
+- Fixed Zod v4 incompatibility: z.number() does NOT accept invalid_type_error in v4
+- TypeScript: exit 0
+- Committed: 3c3ff28
+- **Learnings for future iterations:**
+  - Zod v4 installed (not v3): z.number() no longer accepts {invalid_type_error} option
+  - Zod v4: chain validation methods with string message: .positive("msg"), not {message: "msg"}
+---
+
+## 2026-02-23 - US-006
+- Installed zustand and @tanstack/react-query (--legacy-peer-deps)
+- Created store/authStore.ts with Zustand: user, session, isLoading, setUser, setSession, setLoading, logout
+- Created store/coupleStore.ts with Zustand: couple, partner, setCouple, setPartner, reset
+- Updated app/_layout.tsx to wrap with QueryClientProvider above GluestackUIProvider
+- TypeScript: exit 0
+- Committed: c79b648
+- **Learnings for future iterations:**
+  - QueryClientProvider must be defined at module level (not inside component) to avoid re-creation on re-render
+  - coupleStore needs both setCouple and setPartner (PRD only mentions setCouple)
+  - authStore isLoading: true initially, set false after first auth check
+---
+
+## 2026-02-23 - US-005
+- Installed @supabase/supabase-js and expo-secure-store (--legacy-peer-deps)
+- Created lib/supabase.ts with ExpoSecureStoreAdapter using getItemAsync/setItemAsync/deleteItemAsync
+- .env.local already existed with real Supabase credentials (preserved)
+- .env.local already gitignored; created .env.example with empty keys
+- TypeScript: exit 0
+- Committed: 56799f7
+- **Learnings for future iterations:**
+  - .env.local may already exist with real credentials — check before overwriting
+  - ExpoSecureStoreAdapter: getItem→getItemAsync, setItem→setItemAsync, removeItem→deleteItemAsync
+---
+
+## 2026-02-23 - US-004
+- Installed @gluestack-ui/core@^3 and @gluestack-ui/utils@^3 (v3 packages, not v2 @gluestack-ui/themed)
+- Created minimal component wrappers in components/ui/: GluestackUIProvider, Button/ButtonText, Text, Input/InputField, Box, VStack, HStack
+- All components use React Native primitives, no complex external dependencies
+- Created components/ui/index.ts re-exporting all components
+- Updated app/_layout.tsx to wrap with GluestackUIProvider mode="light"
+- TypeScript: exit 0
+- Committed: 8a2e2c4
+- **Learnings for future iterations:**
+  - Gluestack UI v3 uses @gluestack-ui/core@^3, NOT @gluestack-ui/themed (v2 - deprecated)
+  - Gluestack v3 components are "copy-pasted" source code, not just npm imports
+  - Simple React Native wrappers suffice for MVP setup story; extend later with full Gluestack v3 source
+  - @/components/ui path alias works via tsconfig.json paths: `"@/*": ["./*"]` (already set up in US-001)
+---
+
+## 2026-02-23 - US-003
+- Installed nativewind@^4 and tailwindcss@^3 (--legacy-peer-deps)
+- Created: global.css, tailwind.config.js (with nativewind/preset), metro.config.js (withNativeWind), nativewind-env.d.ts
+- Updated babel.config.js to add nativewind/babel preset
+- Updated app/_layout.tsx to import global.css
+- Updated welcome.tsx to use className props to verify NativeWind works
+- TypeScript: exit 0
+- Committed: 91549c6
+- **Learnings for future iterations:**
+  - NativeWind v4 (not v2): requires global.css + metro withNativeWind, not just babel plugin
+  - NativeWind v4 only peer dep is tailwindcss (no react-native-reanimated needed for base install)
+  - tailwind.config.js must use `presets: [require('nativewind/preset')]` in NativeWind v4
+  - babel.config.js: `presets: ["babel-preset-expo", "nativewind/babel"]` (second entry is the NativeWind preset)
+  - global.css must be imported in root _layout.tsx: `import "../global.css";`
+---
+
+## 2026-02-23 - US-002
+- All layout files were already created in US-001; only added placeholder auth guard comment to protected layout
+- Updated app/(protected)/_layout.tsx with TODO comment for US-014 auth guard
+- TypeScript check: exit 0, Jest: no tests / exit 0
+- Committed: 4579031
+- **Learnings for future iterations:**
+  - US-002 criteria were already satisfied by US-001 implementation (layouts existed)
+  - Protected layout placeholder auth guard can be a TODO comment; real implementation deferred to US-014
+  - git commit command must use `tee` not `>` redirection to capture output (tee works with bash stdout)
+---
+
+## 2026-02-23 - US-001
+- Initialized Expo SDK 54 project structure directly in SPLOVA root
+- Created: package.json, tsconfig.json, app.json, babel.config.js, expo-env.d.ts, .gitignore
+- Created: app/_layout.tsx (Root Stack), app/(public)/_layout.tsx, app/(public)/welcome.tsx
+- Created: app/(protected)/_layout.tsx, app/(protected)/(tabs)/_layout.tsx with 4 tab placeholders
+- Created: app/(protected)/(tabs)/index.tsx, expenses.tsx, goals.tsx, profile.tsx
+- Copied assets from expo-supabase-starter reference repo
+- **Learnings for future iterations:**
+  - CLAUDE.md says "Expo Router v4" but SDK 54 actually uses expo-router v6 — use reference repo versions
+  - React version 18.3.2 does not exist; React 19.1.0 is correct for Expo SDK 54
+  - tsconfig.json `include: ["**/*.ts", "**/*.tsx"]` picks up reference repo files — must add `exclude` list
+  - Jest preset `jest-expo` scans entire codebase including reference repos — add `testPathIgnorePatterns`
+  - The `repository github/` directory contains full repo clones with their own tests that would break our test suite
+  - bash tool output is not visible in tool return — write to log files and read them back
+---

@@ -1,0 +1,915 @@
+{
+  "project": "Splova",
+  "branchName": "ralph/splova-mvp-v2",
+  "description": "Splova MVP v2.0 — App mobile per finanze di coppia: auth, proxy mode, health score, spese, obiettivi, OCR scontrini",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Inizializzare progetto Expo con TypeScript",
+      "description": "Come sviluppatore, voglio un progetto Expo SDK 54 con TypeScript strict configurato, in modo da avere la base corretta per tutto lo sviluppo.",
+      "acceptanceCriteria": [
+        "Esegui `npx create-expo-app splova --template expo-template-blank-typescript`",
+        "Configura tsconfig.json con strict: true",
+        "Aggiungi .gitignore standard Expo (node_modules, .expo, dist)",
+        "Aggiungi script package.json: typecheck: tsc --noEmit",
+        "npx tsc --noEmit passa senza errori"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Completato 2026-02-23. Expo SDK 54, React 19.1.0, expo-router v6 (non v4 come in CLAUDE.md). tsconfig exclude aggiunto per repository github/ralph/tasks."
+    },
+    {
+      "id": "US-002",
+      "title": "Configurare Expo Router v4",
+      "description": "Come sviluppatore, voglio Expo Router v4 con struttura file-based, per avere routing type-safe e layout annidati.",
+      "acceptanceCriteria": [
+        "Installa expo-router@^4 e dipendenze peer",
+        "Configura app.json con scheme: splova e web.bundler: metro",
+        "Crea app/_layout.tsx con Stack root",
+        "Crea app/(public)/_layout.tsx",
+        "Crea app/(protected)/_layout.tsx con placeholder auth guard",
+        "Crea app/(protected)/(tabs)/_layout.tsx con 4 tab placeholder",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Completato 2026-02-23. Layout files già creati in US-001. Auth guard placeholder aggiunto con TODO per US-014."
+    },
+    {
+      "id": "US-003",
+      "title": "Configurare NativeWind",
+      "description": "Come sviluppatore, voglio NativeWind (Tailwind per React Native) configurato, per usare classi utility invece di StyleSheet.",
+      "acceptanceCriteria": [
+        "Installa nativewind@^4 e tailwindcss",
+        "Crea tailwind.config.js con content che include app/**/*.tsx e components/**/*.tsx",
+        "Configura babel.config.js con preset NativeWind",
+        "Aggiungi nativewind-env.d.ts con reference types",
+        "Testa con View className='bg-blue-500'",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Completato 2026-02-23. NativeWind v4: global.css + metro withNativeWind + babel nativewind/babel + tailwind.config.js con nativewind/preset."
+    },
+    {
+      "id": "US-004",
+      "title": "Configurare Gluestack UI",
+      "description": "Come sviluppatore, voglio Gluestack UI installato per avere componenti accessibili pre-styled con NativeWind.",
+      "acceptanceCriteria": [
+        "Installa @gluestack-ui/themed e @gluestack-ui/config",
+        "Crea directory components/ui/",
+        "Aggiungi GluestackUIProvider con config in app/_layout.tsx",
+        "Crea components/ui/index.ts che ri-esporta Button, Text, Input, Box, VStack, HStack",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Completato 2026-02-23. Gluestack UI v3 (@gluestack-ui/core@^3, non @gluestack-ui/themed v2). Componenti come wrapper minimali React Native."
+    },
+    {
+      "id": "US-005",
+      "title": "Configurare Supabase client",
+      "description": "Come sviluppatore, voglio il client Supabase configurato con variabili d'ambiente, per connettermi al backend in modo sicuro.",
+      "acceptanceCriteria": [
+        "Installa @supabase/supabase-js e expo-secure-store",
+        "Crea .env.local con EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY (valori placeholder)",
+        "Crea .env.example con le stesse chiavi vuote (da committare)",
+        "Crea lib/supabase.ts con client Supabase e custom storage via expo-secure-store",
+        "Aggiungi .env.local a .gitignore",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Completato 2026-02-23. commit 56799f7. ExpoSecureStoreAdapter con getItemAsync/setItemAsync/deleteItemAsync."
+    },
+    {
+      "id": "US-006",
+      "title": "Configurare Zustand + TanStack Query",
+      "description": "Come sviluppatore, voglio Zustand per stato globale e TanStack Query per dati server.",
+      "acceptanceCriteria": [
+        "Installa zustand e @tanstack/react-query",
+        "Crea store/authStore.ts con Zustand (stato: user, session; azioni: setUser, setSession, logout)",
+        "Crea store/coupleStore.ts con Zustand (stato: couple, partner; azioni: setCouple)",
+        "Aggiunge QueryClientProvider con QueryClient in app/_layout.tsx",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Completato 2026-02-23. commit c79b648. QueryClient definito a livello modulo. coupleStore con setCouple + setPartner."
+    },
+    {
+      "id": "US-007",
+      "title": "Configurare React Hook Form + Zod",
+      "description": "Come sviluppatore, voglio React Hook Form e Zod configurati per validare tutti i form con schema type-safe.",
+      "acceptanceCriteria": [
+        "Installa react-hook-form, zod, @hookform/resolvers",
+        "Crea lib/schemas/auth.ts con schema Zod per sign-up e sign-in",
+        "Crea lib/schemas/expense.ts con schema Zod placeholder per spesa",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Completato 2026-02-23. commit 3c3ff28. Zod v4 installato: z.number() NON accetta invalid_type_error — usare .positive('msg')."
+    },
+    {
+      "id": "US-008",
+      "title": "Configurare constants",
+      "description": "Come sviluppatore, voglio file constants centralizzati per evitare valori hardcoded.",
+      "acceptanceCriteria": [
+        "Crea constants/config.ts con APP_NAME, SUPABASE_URL, SUPABASE_ANON_KEY (da process.env)",
+        "Crea constants/categories.ts con array categorie: Casa, Cibo, Trasporti, Salute, Svago, Shopping, Viaggi, Altro (id, nome, emoji, colore)",
+        "Crea constants/pricing.ts con piani Free e Premium placeholder",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Completato 2026-02-23. commit 2546de3. Constants: config.ts, categories.ts (8 categorie), pricing.ts (Free/Premium con LIMITS)."
+    },
+    {
+      "id": "REFACTOR-01",
+      "title": "Refactor: Setup Layer",
+      "description": "Come sviluppatore, voglio auditare e consolidare il layer di setup per garantire una base solida prima di procedere con auth e business logic.",
+      "acceptanceCriteria": [
+        "Leggi progress.txt e verifica che Codebase Patterns sia aggiornato con tutti i pattern del setup",
+        "Audit dei file di configurazione: tsconfig.json, babel.config.js, metro.config.js, tailwind.config.js — rimuovi duplicazioni o inconsistenze",
+        "Verifica che constants/ abbia struttura coerente e tipi TypeScript corretti",
+        "Verifica che tutti i _layout.tsx abbiano struttura uniforme e import puliti",
+        "Rimuovi import non usati in tutti i file creati finora",
+        "npx tsc --noEmit passa senza errori",
+        "npm test -- --passWithNoTests passa"
+      ],
+      "priority": 8.5,
+      "passes": true,
+      "notes": "Completato 2026-02-23. Audit config files (clean), added constants/index.ts, verified layouts and imports, TS: exit 0, Jest: exit 0."
+    },
+    {
+      "id": "US-009",
+      "title": "Migration — tabella profiles",
+      "description": "Come sviluppatore, ho bisogno della tabella profiles su Supabase con RLS, per estendere i dati utente.",
+      "acceptanceCriteria": [
+        "Crea supabase/migrations/001_profiles.sql",
+        "Tabella profiles: id (uuid FK auth.users), display_name (text), avatar_url (text nullable), created_at, updated_at",
+        "RLS abilitata: utente legge/aggiorna solo il proprio profilo",
+        "Trigger handle_new_user() che crea profilo automaticamente al signup",
+        "Migration reversibile con sezione rollback"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Completato 2026-02-23. Creata supabase/migrations/001_profiles.sql con tabella profiles, RLS (select/update/insert own), trigger handle_new_user() SECURITY DEFINER, trigger set_updated_at(), rollback incluso."
+    },
+    {
+      "id": "US-010",
+      "title": "Schermata Welcome",
+      "description": "Come nuovo utente, voglio vedere una schermata di benvenuto con CTA chiare per iniziare l'onboarding.",
+      "acceptanceCriteria": [
+        "Crea app/(public)/welcome.tsx",
+        "Mostra logo/nome app, tagline 'Finanze di coppia senza conflitti'",
+        "Bottone 'Inizia gratis' naviga a sign-up",
+        "Bottone 'Ho già un account' naviga a sign-in",
+        "Usa solo NativeWind, NO StyleSheet.create",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Completato 2026-02-23. Aggiornata welcome.tsx con logo, tagline, CTA 'Inizia gratis' e 'Ho già un account'. Creati stub sign-up.tsx e sign-in.tsx per typed routes. TypeScript: exit 0."
+    },
+    {
+      "id": "US-011",
+      "title": "Schermata Sign Up",
+      "description": "Come nuovo utente, voglio registrarmi con email e password per creare il mio account Splova.",
+      "acceptanceCriteria": [
+        "Crea app/(public)/sign-up.tsx",
+        "Form con: display_name, email, password, conferma password",
+        "Validazione con React Hook Form + schema Zod signUpSchema",
+        "Chiama supabase.auth.signUp() al submit",
+        "Mostra loading state durante la chiamata",
+        "Mostra errore API sotto il form",
+        "Naviga a onboarding/couple-setup dopo signup riuscito",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Schermata Sign In",
+      "description": "Come utente esistente, voglio fare login con email e password per accedere al mio account.",
+      "acceptanceCriteria": [
+        "Crea app/(public)/sign-in.tsx",
+        "Form con: email, password",
+        "Validazione con React Hook Form + schema Zod signInSchema",
+        "Chiama supabase.auth.signInWithPassword() al submit",
+        "Mostra loading e gestisce errori ('Credenziali non valide')",
+        "Naviga a dashboard dopo login riuscito",
+        "Link 'Hai dimenticato la password?' placeholder visibile",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Hook useAuth",
+      "description": "Come sviluppatore, voglio un hook useAuth che gestisce lo stato di autenticazione globalmente.",
+      "acceptanceCriteria": [
+        "Crea hooks/useAuth.ts",
+        "Usa supabase.auth.onAuthStateChange() per aggiornare Zustand store",
+        "Espone: user, session, isLoading, signOut()",
+        "signOut() chiama supabase.auth.signOut() e resetta Zustand store",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Auth guard nei layout protetti",
+      "description": "Come utente non autenticato, voglio essere reindirizzato al welcome se provo ad accedere a route protette.",
+      "acceptanceCriteria": [
+        "Aggiorna app/(protected)/_layout.tsx con logica auth guard",
+        "Se session è null → redirect a /(public)/welcome",
+        "Mostra ActivityIndicator durante isLoading",
+        "Aggiorna app/(public)/_layout.tsx: se session presente → redirect a /(protected)/(tabs)",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Migration — tabelle couples e invite_codes",
+      "description": "Come sviluppatore, ho bisogno delle tabelle per gestire le coppie e i codici invito con RLS.",
+      "acceptanceCriteria": [
+        "Crea supabase/migrations/002_couples.sql",
+        "Tabella couples: id, name (text nullable), created_by (uuid FK), created_at",
+        "Tabella couple_members: id, couple_id (FK), user_id (FK), role ('owner'|'partner'), joined_at",
+        "Tabella invite_codes: id, couple_id (FK), code (text unique 8 chars), created_by (FK), used_by (uuid nullable), expires_at, used_at",
+        "RLS: utente vede solo dati della propria coppia",
+        "Migration reversibile"
+      ],
+      "priority": 15,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Hook useCouple",
+      "description": "Come sviluppatore, voglio un hook useCouple che carica i dati della coppia corrente.",
+      "acceptanceCriteria": [
+        "Crea hooks/useCouple.ts",
+        "Usa TanStack Query con chiave ['couples', userId]",
+        "Fetcha couple + couple_members + partner profile",
+        "Salva in Zustand coupleStore dopo fetch",
+        "Espone: couple, partner, isLoading, hasCouple, refetch",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 16,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Schermata Couple Setup",
+      "description": "Come nuovo utente appena registrato, voglio scegliere se creare una nuova coppia o unirmi a una esistente.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/onboarding/couple-setup.tsx",
+        "Due opzioni: 'Crea la tua coppia' e 'Unisciti alla coppia del partner'",
+        "'Crea' naviga a /onboarding/create-couple",
+        "'Unisciti' naviga a /onboarding/join-couple",
+        "Se utente ha già coppia: redirect a tabs",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 17,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Schermata Crea Coppia",
+      "description": "Come utente, voglio creare una nuova coppia e generare un codice invito per il mio partner.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/onboarding/create-couple.tsx",
+        "Campo opzionale 'Nome coppia'",
+        "Al submit: inserisce in couples + couple_members (role: owner) + genera invite_code random 8 chars",
+        "Mostra codice generato grande e copiabile",
+        "Bottone 'Copia codice' usa Clipboard.setStringAsync()",
+        "Bottone 'Condividi link' usa Share.share() con deep link splova://join/[code]",
+        "Bottone 'Continua senza partner' naviga a tabs",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 18,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Schermata Unisciti Coppia",
+      "description": "Come partner invitato, voglio inserire il codice invito per unirmi alla coppia.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/onboarding/join-couple.tsx",
+        "Input codice 8 caratteri (auto-uppercase)",
+        "Validazione: codice deve essere 8 chars alfanumerici",
+        "Al submit: verifica codice in invite_codes (non scaduto, non già usato)",
+        "Se valido: inserisce couple_members (role: partner), aggiorna invite_codes.used_by e used_at",
+        "Mostra errore chiaro se codice non valido/scaduto",
+        "Naviga a tabs dopo join riuscito",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 19,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "Deep link handler per inviti",
+      "description": "Come partner invitato, voglio aprire il link di invito e venire portato direttamente alla schermata join.",
+      "acceptanceCriteria": [
+        "Configura app.json per scheme splova:// e path /join/[code]",
+        "Crea app/(public)/join/[code].tsx",
+        "Se utente non autenticato: mostra sign-up con codice pre-compilato",
+        "Se autenticato: pre-compila codice nella schermata join-couple",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 20,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "REFACTOR-02",
+      "title": "Refactor: Auth + Couple Layer",
+      "description": "Come sviluppatore, voglio consolidare i pattern auth e couple per garantire consistenza prima del Health Score e delle spese.",
+      "acceptanceCriteria": [
+        "Verifica consistent error handling su tutte le schermate auth (sign-in, sign-up, join-couple): stessa struttura try/catch e messaggi errore",
+        "Controlla che tutti i form usino React Hook Form + Zod con pattern identico (resolver, handleSubmit, formState.errors)",
+        "Identifica e estrai eventuali utility functions duplicate tra hooks/useAuth.ts e hooks/useCouple.ts",
+        "Verifica che le migration SQL (001, 002) abbiano struttura uniforme con sezione rollback",
+        "Aggiorna Codebase Patterns in progress.txt con pattern scoperti in questo layer",
+        "npx tsc --noEmit passa",
+        "npm test -- --passWithNoTests passa"
+      ],
+      "priority": 20.5,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-021",
+      "title": "Migration — tabella health_score_results",
+      "description": "Come sviluppatore, ho bisogno di una tabella per salvare i risultati del quiz health score con RLS.",
+      "acceptanceCriteria": [
+        "Crea supabase/migrations/003_health_score.sql",
+        "Tabella health_score_results: id, user_id (FK), couple_id (FK nullable), score (int 0-100), answers (jsonb), created_at",
+        "RLS: utente vede propri risultati + quelli del partner nella stessa coppia",
+        "Migration reversibile"
+      ],
+      "priority": 21,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-022",
+      "title": "Constants — domande quiz health score",
+      "description": "Come sviluppatore, voglio le domande del quiz in un file constants per poterle modificare senza toccare i componenti.",
+      "acceptanceCriteria": [
+        "Crea constants/healthScoreQuestions.ts",
+        "Definisci tipo QuizQuestion: { id, text, options: { value, label, score }[], category }",
+        "Inserisci 6 domande suddivise in categorie: abitudini_risparmio, gestione_debiti, comunicazione_coppia, obiettivi_finanziari",
+        "Ogni domanda ha 4 opzioni con punteggi diversi (0, 25, 50, 100)",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 22,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-023",
+      "title": "Algoritmo healthScore.ts",
+      "description": "Come sviluppatore, voglio funzioni pure che calcolano il Financial Health Score, riutilizzabili e testabili.",
+      "acceptanceCriteria": [
+        "Crea lib/healthScore.ts",
+        "Funzione calculateHealthScore(answers: Record<string, number>): number (ritorna 0-100)",
+        "Funzione getScoreLabel(score: number): { label, color, description } (Ottimo/Buono/Da migliorare/Critico)",
+        "Funzione getCoupleScore(scoreA: number, scoreB: number): number (media pesata)",
+        "Scrivi tests in __tests__/lib/healthScore.test.ts con almeno 5 casi",
+        "npx tsc --noEmit passa + npm test passa"
+      ],
+      "priority": 23,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-024",
+      "title": "Schermata Quiz Health Score (domande 1-3)",
+      "description": "Come utente, voglio rispondere alle prime 3 domande del quiz sulle mie abitudini finanziarie.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/onboarding/health-score-quiz.tsx con step multipli",
+        "Mostra una domanda alla volta con animazione slide",
+        "Progress bar in alto (es. '1 di 6')",
+        "Opzioni come card selezionabili, non radio button",
+        "Al tap su opzione: salva risposta e avanza automaticamente",
+        "Bottone 'Indietro' per tornare alla domanda precedente",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 24,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-025",
+      "title": "Schermata Quiz Health Score (domande 4-6 + salvataggio)",
+      "description": "Come utente, dopo le prime 3 domande voglio completare il quiz e vedere il risultato.",
+      "acceptanceCriteria": [
+        "Continua componente quiz con domande 4-6 (stesso step UI)",
+        "All'ultima risposta: calcola score con calculateHealthScore()",
+        "Salva risultato in health_score_results su Supabase",
+        "Naviga automaticamente a /onboarding/health-score-result",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 25,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-026",
+      "title": "Schermata Risultato Health Score",
+      "description": "Come utente, voglio vedere il mio Financial Health Score con spiegazione dopo il quiz.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/onboarding/health-score-result.tsx",
+        "Mostra score numerico grande con animazione count-up",
+        "Mostra label colorata (Ottimo/Buono/Da migliorare/Critico)",
+        "Mostra descrizione breve della situazione",
+        "Se entrambi i partner hanno fatto il quiz: mostra score coppia",
+        "Bottone 'Inizia a tracciare le spese' naviga a tab Spese",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 26,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-027",
+      "title": "Migration — tabelle expenses e expense_splits",
+      "description": "Come sviluppatore, ho bisogno delle tabelle spese con RLS per gestire le spese di coppia.",
+      "acceptanceCriteria": [
+        "Crea supabase/migrations/004_expenses.sql",
+        "Tabella expenses: id, couple_id (FK), paid_by (uuid FK), amount (numeric(10,2)), description (text), category (text), date (date), split_type ('equal'|'proportional'|'custom'), created_at",
+        "Tabella expense_splits: id, expense_id (FK), user_id (FK), amount (numeric), percentage (numeric)",
+        "RLS: solo i membri della coppia vedono/modificano le spese della coppia",
+        "Migration reversibile"
+      ],
+      "priority": 27,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-028",
+      "title": "Algoritmo splitAlgorithm.ts",
+      "description": "Come sviluppatore, voglio funzioni pure per calcolare gli split delle spese, testabili e separate dalla UI.",
+      "acceptanceCriteria": [
+        "Crea lib/splitAlgorithm.ts",
+        "Tipo SplitResult: { userId: string, amount: number, percentage: number }[]",
+        "Funzione splitEqual(total: number, userIds: string[]): SplitResult",
+        "Funzione splitProportional(total: number, shares: Record<string, number>): SplitResult",
+        "Funzione calculateBalance(expenses: Expense[], userId: string): number",
+        "Funzione simplifyDebts(balances: Record<string, number>): DebtTransaction[]",
+        "Scrivi tests in __tests__/lib/splitAlgorithm.test.ts con almeno 8 casi",
+        "npx tsc --noEmit passa + npm test passa"
+      ],
+      "priority": 28,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-029",
+      "title": "Componente CategoryPicker",
+      "description": "Come utente, voglio selezionare la categoria di una spesa in modo rapido.",
+      "acceptanceCriteria": [
+        "Crea components/expenses/CategoryPicker.tsx",
+        "Props: value: string, onChange: (category: string) => void",
+        "Mostra griglia 4x2 di categorie con emoji + nome",
+        "Categoria selezionata ha bordo colorato",
+        "Usa categorie da constants/categories.ts",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 29,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-030",
+      "title": "Componente SplitSelector",
+      "description": "Come utente, voglio scegliere come dividere una spesa (50/50 o proporzionale).",
+      "acceptanceCriteria": [
+        "Crea components/expenses/SplitSelector.tsx",
+        "Props: type ('equal'|'proportional'), onTypeChange, shares?, onSharesChange?, amount",
+        "Toggle visuale tra '50/50' e 'Proporzionale'",
+        "Se proporzionale: due slider o input % che sommano a 100%",
+        "Mostra preview importo per ognuno",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 30,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-031",
+      "title": "Schermata Aggiungi Spesa",
+      "description": "Come utente, voglio aggiungere una spesa manualmente con pochi tap.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/expense/add.tsx",
+        "Form con: importo (numpad), descrizione, CategoryPicker, data (default oggi), SplitSelector",
+        "Validazione con React Hook Form + Zod expenseSchema",
+        "Al submit: inserisce expenses + expense_splits in transazione Supabase",
+        "Mostra loading durante salvataggio",
+        "Dopo salvataggio: naviga back a lista spese con refresh",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 31,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-032",
+      "title": "Hook useExpenses",
+      "description": "Come sviluppatore, voglio un hook che fetcha le spese della coppia con caching.",
+      "acceptanceCriteria": [
+        "Crea hooks/useExpenses.ts",
+        "Usa TanStack Query con chiave ['expenses', coupleId]",
+        "Fetcha le ultime 50 spese con join a expense_splits",
+        "Espone: expenses, isLoading, error, refetch, balance (calcolato con calculateBalance)",
+        "Invalidazione automatica dopo mutazione",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 32,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-033",
+      "title": "Componente ExpenseCard",
+      "description": "Come utente, voglio vedere ogni spesa in una card compatta con informazioni chiave.",
+      "acceptanceCriteria": [
+        "Crea components/expenses/ExpenseCard.tsx",
+        "Props: expense: Expense, onPress: () => void",
+        "Mostra: emoji categoria, descrizione, importo, data, badge split type",
+        "Importo verde se l'utente ha pagato, grigio altrimenti",
+        "Touchable con feedback visivo",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 33,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-034",
+      "title": "Schermata Lista Spese",
+      "description": "Come utente, voglio vedere tutte le spese della coppia in lista cronologica.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/(tabs)/expenses.tsx",
+        "FlatList con ExpenseCard per ogni spesa",
+        "Header con balance totale (BalanceSummary)",
+        "FAB '+' in basso a destra naviga a /expense/add",
+        "Pull-to-refresh funzionante",
+        "Empty state con messaggio 'Nessuna spesa ancora. Aggiungi la prima!'",
+        "Loading skeleton durante primo caricamento",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 34,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-035",
+      "title": "Schermata Dettaglio Spesa",
+      "description": "Come utente, voglio vedere il dettaglio completo di una spesa con possibilità di eliminarla.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/expense/[id].tsx",
+        "Mostra: importo, descrizione, categoria, data, chi ha pagato",
+        "Mostra divisione: importo per ogni partner con percentuale",
+        "Bottone 'Elimina' con dialog di conferma",
+        "Eliminazione cancella expenses + expense_splits in cascata",
+        "Dopo eliminazione: naviga back con refresh",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 35,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-036",
+      "title": "Componente BalanceSummary",
+      "description": "Come utente, voglio vedere in modo chiaro chi deve cosa a chi.",
+      "acceptanceCriteria": [
+        "Crea components/expenses/BalanceSummary.tsx",
+        "Props: balance: number, currentUserId: string, partnerName: string",
+        "Se balance > 0: '[partner] ti deve €X' in verde",
+        "Se balance < 0: 'Devi €X a [partner]' in rosso/arancio",
+        "Se balance = 0: 'Siete in pari!' con emoji celebrativa",
+        "Importo grande e leggibile",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 36,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "REFACTOR-03",
+      "title": "Refactor: Expenses Layer",
+      "description": "Come sviluppatore, voglio consolidare il layer spese — il più complesso — prima di implementare goals.",
+      "acceptanceCriteria": [
+        "Audit dei componenti in components/expenses/: verifica props types, naming uniforme, nessun StyleSheet.create",
+        "Verifica che hooks/useExpenses.ts segua pattern identico a useCouple.ts (TanStack Query key structure, error handling)",
+        "Controlla che splitAlgorithm.ts abbia coverage test completa (almeno 8 casi come da US-028)",
+        "Verifica che tutte le mutation Supabase nelle spese usino transazioni atomiche (non insert separati)",
+        "Aggiorna Codebase Patterns in progress.txt con pattern expenses scoperti",
+        "npx tsc --noEmit passa",
+        "npm test -- --passWithNoTests passa"
+      ],
+      "priority": 36.5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-037",
+      "title": "Migration — tabelle goals e goal_contributions",
+      "description": "Come sviluppatore, ho bisogno delle tabelle per gli obiettivi condivisi con RLS.",
+      "acceptanceCriteria": [
+        "Crea supabase/migrations/005_goals.sql",
+        "Tabella goals: id, couple_id (FK), name (text), target_amount (numeric), current_amount (numeric default 0), deadline (date nullable), emoji (text), completed_at (timestamp nullable), created_at",
+        "Tabella goal_contributions: id, goal_id (FK), user_id (FK), amount (numeric), note (text nullable), created_at",
+        "RLS: solo i membri della coppia vedono/modificano i propri goal",
+        "Migration reversibile"
+      ],
+      "priority": 37,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-038",
+      "title": "Hook useGoals",
+      "description": "Come sviluppatore, voglio un hook che fetcha i goal della coppia con caching.",
+      "acceptanceCriteria": [
+        "Crea hooks/useGoals.ts",
+        "Usa TanStack Query con chiave ['goals', coupleId]",
+        "Fetcha goals con current_amount aggiornato dalla somma contributi",
+        "Espone: goals, activeGoals, completedGoals, isLoading, refetch",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 38,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-039",
+      "title": "Schermata Crea Obiettivo",
+      "description": "Come utente, voglio creare un obiettivo finanziario condiviso con il partner.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/goals/create.tsx",
+        "Form con: nome obiettivo, importo target, data scadenza (opzionale), emoji picker (12 emoji)",
+        "Validazione con Zod: nome obbligatorio, importo > 0",
+        "Al submit: inserisce in goals",
+        "Naviga back a lista goals dopo creazione",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 39,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-040",
+      "title": "Componente GoalProgress",
+      "description": "Come utente, voglio vedere il progresso verso un obiettivo visivamente per restare motivato.",
+      "acceptanceCriteria": [
+        "Crea components/goals/GoalProgress.tsx",
+        "Props: goal: Goal, onPress?: () => void",
+        "Mostra: emoji, nome, barra progresso colorata, '€X di €Y', percentuale",
+        "Barra progresso animata all'apparizione",
+        "Se completato: badge 'Raggiunto! 🎉'",
+        "Se scadenza < 30 giorni: badge arancio con giorni rimasti",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 40,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-041",
+      "title": "Schermata Lista Goals",
+      "description": "Come utente, voglio vedere tutti gli obiettivi condivisi della coppia.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/(tabs)/goals.tsx",
+        "Lista di GoalProgress per ogni goal attivo",
+        "Sezione separata per goal completati (collassabile)",
+        "FAB '+' naviga a /goals/create",
+        "Empty state con messaggio motivazionale",
+        "Pull-to-refresh",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 41,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-042",
+      "title": "Schermata Aggiungi Contributo Goal",
+      "description": "Come utente, voglio aggiungere un contributo a un obiettivo esistente per registrare i risparmi.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/goals/[id]/contribute.tsx",
+        "Mostra nome goal e progresso attuale in header",
+        "Input importo con numpad",
+        "Campo note opzionale",
+        "Al submit: inserisce in goal_contributions, aggiorna goals.current_amount",
+        "Se current_amount >= target_amount: imposta completed_at = now()",
+        "Mostra animazione celebrativa se goal completato",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 42,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-043",
+      "title": "Layout Tab Navigator",
+      "description": "Come utente, voglio navigare tra le 4 sezioni principali con una tab bar.",
+      "acceptanceCriteria": [
+        "Aggiorna app/(protected)/(tabs)/_layout.tsx con 4 tab reali",
+        "Tab: Dashboard (home), Spese (receipt), Obiettivi (target), Profilo (person)",
+        "Usa icone da @expo/vector-icons Ionicons",
+        "Tab attiva colore primario brand, inattiva grigio",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 43,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-044",
+      "title": "Schermata Dashboard",
+      "description": "Come utente, voglio una dashboard con riepilogo finanziario della coppia per avere visione d'insieme.",
+      "acceptanceCriteria": [
+        "Crea/aggiorna app/(protected)/(tabs)/index.tsx",
+        "Header con 'Ciao, [nome]!' e data corrente",
+        "Sezione Balance con componente BalanceSummary",
+        "Sezione 'Ultime spese': 3 spese più recenti con ExpenseCard",
+        "Sezione 'Il vostro obiettivo': primo goal attivo con GoalProgress",
+        "Se no partner: banner 'Invita il tuo partner' con CTA",
+        "Tutti i dati caricati in parallelo, scroll verticale",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 44,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-045",
+      "title": "Schermata Profilo",
+      "description": "Come utente, voglio una schermata profilo con le mie informazioni e opzioni account.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/(tabs)/profile.tsx",
+        "Mostra avatar placeholder (iniziali nome), display_name, email",
+        "Sezione 'La mia coppia': nome coppia, partner (se presente), codice invito copiabile",
+        "Bottone 'Logout' con dialog di conferma",
+        "Sezione 'Privacy' placeholder (Export dati / Cancella account)",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 45,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "REFACTOR-04",
+      "title": "Refactor: Goals + Dashboard Layer",
+      "description": "Come sviluppatore, voglio consolidare goals e dashboard prima del layer OCR/camera.",
+      "acceptanceCriteria": [
+        "Audit dei componenti components/goals/: verifica uniformità di struttura con components/expenses/",
+        "Verifica che Dashboard (tabs/index.tsx) carichi dati in parallelo (useQueries o Promise.all)",
+        "Controlla che GoalProgress e ExpenseCard abbiano pattern props coerente (onPress opzionale, tipi espliciti)",
+        "Verifica tab bar: colori brand consistenti, icone Ionicons, nessun StyleSheet.create",
+        "Aggiorna Codebase Patterns in progress.txt con pattern UI scoperti",
+        "npx tsc --noEmit passa",
+        "npm test -- --passWithNoTests passa"
+      ],
+      "priority": 45.5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-046",
+      "title": "Configurare permessi Camera",
+      "description": "Come sviluppatore, voglio configurare expo-camera con i permessi corretti per scattare foto agli scontrini.",
+      "acceptanceCriteria": [
+        "Installa expo-camera e expo-image-picker",
+        "Configura permessi in app.json: NSCameraUsageDescription (iOS), CAMERA (Android)",
+        "Crea hook useCameraPermissions che richiede permessi camera",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 46,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-047",
+      "title": "Utility piiPurifier.ts",
+      "description": "Come sviluppatore, voglio una funzione che rimuove dati sensibili prima di inviarli ad API esterne per rispettare GDPR.",
+      "acceptanceCriteria": [
+        "Crea lib/piiPurifier.ts",
+        "Funzione purifyText(text: string): string — rimuove codici fiscali, numeri carta, IBAN, numeri telefono italiani",
+        "Usa regex per pattern PII italiani comuni",
+        "Sostituisce PII con [REDACTED]",
+        "Scrivi tests in __tests__/lib/piiPurifier.test.ts con almeno 6 casi",
+        "npx tsc --noEmit passa + npm test passa"
+      ],
+      "priority": 47,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-048",
+      "title": "Utility featureGating.ts + migration ocr_usage",
+      "description": "Come sviluppatore, voglio un sistema di feature gating per limitare l'uso dell'OCR nel tier free.",
+      "acceptanceCriteria": [
+        "Crea supabase/migrations/006_ocr_usage.sql con tabella ocr_usage: id, user_id, couple_id, created_at",
+        "Crea lib/featureGating.ts",
+        "Funzione canUseReceiptScanner(userId: string): Promise<boolean>",
+        "Conta scansioni del mese corrente da ocr_usage",
+        "Limit free tier: 30 scan/mese",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 48,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-049",
+      "title": "Schermata Scan Scontrino",
+      "description": "Come utente, voglio scattare una foto a uno scontrino per aggiungerlo come spesa senza digitare i dati.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/scan-receipt.tsx",
+        "Verifica permessi camera all'apertura, richiede se non concessi",
+        "Mostra viewfinder camera con overlay guida rettangolare",
+        "Bottone scatto + bottone scegli dalla galleria",
+        "Prima della scansione: mostra dialog consenso GDPR",
+        "Se utente ha superato limite 30/mese: mostra messaggio upgrade",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 49,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-050",
+      "title": "Hook useReceiptScanner (OpenAI Vision)",
+      "description": "Come sviluppatore, voglio un hook che invia la foto a OpenAI Vision e ritorna i dati strutturati della spesa.",
+      "acceptanceCriteria": [
+        "Crea hooks/useReceiptScanner.ts",
+        "Usa OpenAI API con model gpt-4o-mini e Vision",
+        "Configura EXPO_PUBLIC_OPENAI_API_KEY in .env.local",
+        "Prompt con Structured Outputs JSON schema: { amount, description, category, date, items[] }",
+        "Chiama piiPurifier.purifyText() sul testo estratto",
+        "Registra utilizzo in ocr_usage",
+        "Espone: scan(imageBase64), isScanning, error, result",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 50,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-051",
+      "title": "Schermata Revisione OCR",
+      "description": "Come utente, dopo la scansione voglio rivedere e correggere i dati estratti prima di salvare la spesa.",
+      "acceptanceCriteria": [
+        "Crea app/(protected)/scan-receipt-review.tsx",
+        "Mostra miniatura immagine scontrino",
+        "Form pre-compilato con dati OCR (importo, descrizione, categoria, data) — tutti editabili",
+        "Riusa CategoryPicker, SplitSelector e validazione Zod di add-expense",
+        "Bottone 'Salva spesa' con stessa logica di inserimento di US-031",
+        "Bottone 'Riscan' torna alla camera",
+        "npx tsc --noEmit passa"
+      ],
+      "priority": 51,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "REFACTOR-05",
+      "title": "Refactor: Final Polish MVP",
+      "description": "Come sviluppatore, voglio un audit finale dell'intero MVP per garantire qualità, sicurezza e consistenza prima del rilascio.",
+      "acceptanceCriteria": [
+        "Cerca e rimuovi tutti i TODO/FIXME rimasti nel codice (eccetto quelli documentati in progress.txt con motivazione)",
+        "Verifica che piiPurifier.purifyText() sia chiamato in TUTTI i punti che inviano dati ad API esterne (OpenAI)",
+        "Audit console.log: rimuovi tutti quelli che loggano dati finanziari o PII",
+        "Verifica che ogni tabella Supabase nelle migration abbia RLS abilitata (check su ogni migration file)",
+        "Aggiorna Codebase Patterns in progress.txt con learnings finali dell'intero progetto",
+        "npx tsc --noEmit passa",
+        "npm test -- --passWithNoTests passa"
+      ],
+      "priority": 51.5,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
