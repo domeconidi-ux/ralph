@@ -1,3 +1,90 @@
+## 2026-02-24 - US-031
+- Created app/(protected)/expense/add.tsx — full "Nuova spesa" form screen
+- Form fields: importo (decimal-pad TextInput → parseFloat), descrizione, CategoryPicker, data (default today YYYY-MM-DD), SplitSelector
+- Local `splitShares: [number, number]` state drives SplitSelector; not stored in RHF form (schema's `shares` field is optional and unused here)
+- Submit flow: (1) insert expenses row with couple_id/paid_by/amount/description/category/date/split_type; (2) compute p1/p2 amounts and percentages; (3) insert expense_splits rows; (4) rollback (delete expense) if splits insert fails; (5) router.back()
+- Loading state: isSubmitting from RHF disables button and shows ActivityIndicator
+- Fixed lib/schemas/expense.ts: removed `.default("equal")` from split_type — caused type mismatch between zodResolver (infers input type where field is optional) and useForm<ExpenseFormData> (uses output type where field is required); `defaultValues.split_type: "equal"` in useForm replaces the removed default
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: be28d6c
+- **Learnings for future iterations:**
+  - `z.enum([...]).default("value")` causes zodResolver type mismatch: resolver infers input type (field optional) but `useForm<T>` expects output type (field required) — remove `.default()` from Zod and use `defaultValues` in `useForm` instead
+  - For numeric TextInput with Zod `z.number()`: use Controller where `onChange` calls `parseFloat(text)` and `value` displays `value ? String(value) : ""`; use `keyboardType="decimal-pad"` and replace commas with dots before parsing
+  - SplitSelector type prop only accepts "equal"|"proportional" — compute a derived `splitTypeValue` from the form's split_type (which may also be "custom") before passing to the component
+  - Supabase "transaction" pattern (no real client-side transactions): insert expense → insert splits → on splits error, delete expense; include only meaningful rollback, not full saga compensation
+  - `(expenseData as { id: string }).id` is the correct typed assertion when Supabase client is untyped — avoids explicit `any` while still satisfying TypeScript strict
+---
+
+## 2026-02-24 - US-030
+- Created components/expenses/SplitSelector.tsx
+- Props: type ('equal'|'proportional'), onTypeChange, shares?: [number, number], onSharesChange?, amount: number
+- Toggle: two-segment Pressable row (50/50 | Proporzionale) — active segment has #4F46E5 background + white text; inactive has #F9FAFB + gray text
+- Proportional mode: two linked TextInput (keyboardType="number-pad") for percentages; editing one auto-updates the other to keep sum at 100
+- Preview cards: Tu / Partner — shows percentage and formatted euro amount for each person
+- Validation hint: red text shown when isProportional && shares[0]+shares[1] !== 100
+- Dynamic toggle colors use inline `style` prop (same pattern as CategoryPicker); static text styles use NativeWind className
+- `overflow: "hidden"` applied via inline style on the toggle container (NativeWind class not always reliable for overflow in RN)
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: b8c2a0c
+- **Learnings for future iterations:**
+  - `shares?: [number, number]` default `[50, 50]` is valid TypeScript — TS infers the default as assignable to the tuple type, so `shares[0]` and `shares[1]` are `number` (not undefined) inside the function body
+  - When calling optional callback with a literal array that must match a tuple type, use `as [number, number]` cast to avoid TS widening to `number[]`
+  - `overflow: "hidden"` on a container View in RN is best set via inline `style` — NativeWind's `overflow-hidden` can work but inline style is more reliable for React Native clipping behavior
+  - For linked numeric inputs (must sum to 100): editing one input calculates the other as `100 - value`; use `parseInt(text, 10)` for integer percentages
+  - Amount precision: give person 2 the remainder (`amount - p1Amount`) rather than computing independently to avoid cent drift on the total
+---
+
+## 2026-02-24 - US-029
+- Created components/expenses/CategoryPicker.tsx
+- Props: value: string, onChange: (category: string) => void
+- Renders CATEGORIES (8 items) from @/constants as a flex-wrap row — 4 items per row at w-[22%] width
+- Selected category: borderWidth 2, borderColor = category.colore, backgroundColor = `${colore}22` (hex+alpha tint)
+- Unselected category: borderWidth 1, borderColor #E5E7EB (gray-200)
+- Used inline style for dynamic borderColor (hex from data) — NativeWind cannot express dynamic hex values at runtime
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: b344702
+- **Learnings for future iterations:**
+  - Dynamic color values from data (e.g. category.colore hex) must use inline `style` prop, not NativeWind className — Tailwind only generates classes for statically-known values
+  - w-[22%] with flex-wrap gives a natural 4-column grid for 8 items without using FlatList or numColumns
+  - `${color}22` hex alpha suffix pattern (from US-026) also works here for subtle selection tint backgrounds
+---
+
+## 2026-02-24 - US-028
+- Created lib/splitAlgorithm.ts with pure algorithm functions (no React Native or @/ deps)
+- Types: SplitResult (array alias), Expense interface, DebtTransaction interface
+- splitEqual(total, userIds): divides total equally; remainder cents go to first user
+- splitProportional(total, shares): divides by relative weights; rounding correction on first entry
+- calculateBalance(expenses, userId): net balance = sum(paid) - sum(owed); positive = others owe you
+- simplifyDebts(balances): greedy two-pointer algorithm minimising transaction count
+- Created __tests__/lib/splitAlgorithm.test.ts with 21 test cases (well above the 8-case minimum)
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS (21 new + 18 existing)
+- Committed: acc82ee
+- **Learnings for future iterations:**
+  - SplitResult defined as an array type alias (`type SplitResult = {...}[]`) — functions return `SplitResult` directly, not `SplitResult[]`
+  - Rounding pattern for financial math: `Math.round(value * 100) / 100` throughout; adjust first entry after loop to guarantee exact total
+  - simplifyDebts greedy algorithm: separate positives (credits) and negatives (debts absolute values) → two-pointer sweep → O(n) transactions
+  - calculateBalance: iterate expenses, add full amount if paidBy==userId, subtract split.amount if split exists — no split means no financial relation to that expense
+  - Pure lib/ functions import NO React Native or @/ aliases — they compile and test under Node/Jest without any module mocking
+---
+
+## 2026-02-24 - US-027
+- Created supabase/migrations/004_expenses.sql
+- Table expenses: id (uuid PK), couple_id (FK couples CASCADE), paid_by (uuid FK auth.users RESTRICT), amount (numeric(10,2) CHECK >0), description (text), category (text), date (date), split_type (text CHECK IN equal/proportional/custom), created_at
+- Table expense_splits: id (uuid PK), expense_id (FK expenses CASCADE), user_id (FK auth.users RESTRICT), amount (numeric(10,2)), percentage (numeric(5,2)); UNIQUE(expense_id, user_id)
+- Performance indexes on expenses(couple_id), expenses(paid_by), expenses(date), expense_splits(expense_id), expense_splits(user_id)
+- RLS enabled on both tables; reuses get_user_couple_id() helper from 002_couples.sql
+- expenses policies: SELECT/INSERT/UPDATE/DELETE all use `couple_id = public.get_user_couple_id()`
+- expense_splits policies: SELECT/INSERT/UPDATE/DELETE use subquery `expense_id IN (SELECT id FROM public.expenses WHERE couple_id = public.get_user_couple_id())`
+- Rollback section included as SQL comments
+- TypeScript: SUCCESS (exit 0), Jest: 18/18 PASS
+- Committed: 2bcdb58
+- **Learnings for future iterations:**
+  - expense_splits has no direct couple_id — use subquery on expenses table for RLS membership checks (expense_id IN SELECT id FROM expenses WHERE couple_id = get_user_couple_id())
+  - paid_by FK uses ON DELETE RESTRICT to preserve financial records when a user is deleted (prevents accidental data loss)
+  - UNIQUE(expense_id, user_id) on expense_splits prevents duplicate split entries per user per expense
+  - numeric(5,2) for percentage supports values like 33.33% (max 999.99 though semantically capped at 100)
+---
+
 ## 2026-02-24 - US-026
 - Replaced stub app/(protected)/onboarding/health-score-result.tsx with full implementation
 - Fetches user's latest score with useQuery: `health_score_results` → `.eq("user_id", userId).order("created_at", desc).limit(1).maybeSingle()`

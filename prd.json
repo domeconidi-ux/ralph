@@ -461,7 +461,7 @@
         "Migration reversibile"
       ],
       "priority": 27,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -479,7 +479,7 @@
         "npx tsc --noEmit passa + npm test passa"
       ],
       "priority": 28,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -495,7 +495,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 29,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -511,7 +511,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 30,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -528,7 +528,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 31,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
