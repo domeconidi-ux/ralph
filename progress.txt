@@ -1,3 +1,20 @@
+## 2026-02-24 - US-025
+- Updated app/(protected)/onboarding/health-score-quiz.tsx: added save + navigate logic on last answer
+- Created app/(protected)/onboarding/health-score-result.tsx: minimal stub for typed routes
+- On last answer: calculateHealthScore(newAnswers) → insert into health_score_results (user_id, couple_id, score, answers) → router.replace("/onboarding/health-score-result")
+- isSaving state: guards against double-tap on last question; disables all options while Supabase insert is in-flight
+- saveError state: shows Italian error message if insert fails, keeps user on quiz screen to retry
+- couple_id sourced from useCoupleStore().couple?.id ?? null (null if user has no couple yet)
+- user_id sourced from useAuthStore().user!.id (non-null assertion safe — protected route)
+- TypeScript: SUCCESS (exit 0), Jest: 18/18 PASS
+- Committed: 5fd4e83
+- **Learnings for future iterations:**
+  - When making an async Supabase call from an event handler, use a local `isSaving` state to disable UI and prevent double-submission — pattern: setIsSaving(true) → await → setIsSaving(false)
+  - Non-null assertion (user!.id) is appropriate in protected routes where auth is guaranteed by the layout guard
+  - couple?.id ?? null is the idiomatic way to pass optional FK that may be null when couple not yet set up
+  - Route `/onboarding/health-score-result` (without group prefix) works for expo-router push/replace within protected routes — consistent with other onboarding screens (/onboarding/couple-setup, /onboarding/join-couple)
+---
+
 ## 2026-02-24 - US-024
 - Created app/(protected)/onboarding/health-score-quiz.tsx
 - Multi-step quiz component iterating over all 6 HEALTH_SCORE_QUESTIONS from @/constants
