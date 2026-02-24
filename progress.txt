@@ -1,3 +1,17 @@
+## 2026-02-24 - US-036
+- Created components/expenses/BalanceSummary.tsx
+- Props: balance: number, currentUserId: string, partnerName: string
+- balance > 0: '[partnerName] ti deve €X' in green (#16A34A) — large 4xl bold amount
+- balance < 0: 'Devi a [partnerName] €X' in orange (#EA580C) — large 4xl bold amount
+- balance === 0: '🎉 Siete in pari!' with celebratory emoji, gray text
+- currentUserId prop accepted but not used for display (balance sign already encodes direction)
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- **Learnings for future iterations:**
+  - balance=0 check must come before balance>0 check since balance===0 is falsy — all three branches are explicit if/if/return
+  - `currentUserId` prop required by spec but not needed for display logic — keep it to satisfy the AC interface contract
+  - Orange for negative balance uses #EA580C (Tailwind orange-600) — red (#DC2626) feels too alarming for debt; orange is softer
+---
+
 ## 2026-02-24 - US-035
 - Created app/(protected)/expense/[id].tsx — expense detail screen
 - Fetches single expense by ID with useQuery (queryKey: ['expense', id], .maybeSingle())
