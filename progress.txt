@@ -1,3 +1,41 @@
+## 2026-02-24 - US-035
+- Created app/(protected)/expense/[id].tsx — expense detail screen
+- Fetches single expense by ID with useQuery (queryKey: ['expense', id], .maybeSingle())
+- Shows: amount (large, centered), description, category (emoji + name), date (formatted DD/MM/YYYY), payer (Tu / partner display_name)
+- Shows split card: mySplit + partnerSplit from expense_splits array, each with amount and percentage
+- Delete: Alert.alert confirmation dialog → supabase.delete().eq("id", id) → invalidate() → router.back()
+- expense_splits cascade automatically on DB delete (FK ON DELETE CASCADE in 004_expenses.sql migration)
+- invalidate() called from useExpenses() hook to refresh the expenses list on the previous screen
+- Loading/error/not-found states handled explicitly
+- DetailRow + SplitRow as file-local helper components (screen-specific, not reusable)
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: f42e9bf
+- **Learnings for future iterations:**
+  - `useLocalSearchParams<{ id: string }>()` is the correct way to get dynamic route params in expo-router typed routes
+  - Alert.alert for delete confirmation: `[{ text: "Annulla", style: "cancel" }, { text: "Elimina", style: "destructive", onPress: fn }]`
+  - `invalidate()` from useExpenses() invalidates the list query before navigating back — list refreshes automatically when screen regains focus via TanStack Query's `refetchOnWindowFocus`
+  - expense_splits are deleted automatically by the DB CASCADE; no client-side split deletion needed
+  - `.maybeSingle()` (not `.single()`) for detail fetch — returns null without error if expense not found
+---
+
+## 2026-02-24 - US-034
+- Replaced stub app/(protected)/(tabs)/expenses.tsx with full implementation
+- FlatList renders ExpenseRow items via ExpenseCard; keyExtractor and renderItem wrapped in useCallback
+- Header: BalanceSummary inline component — shows "Il partner ti deve" (green) / "Devi al partner" (red) based on balance sign from useExpenses()
+- FAB: absolute-positioned Pressable (bottom-8 right-6, w-14 h-14, bg-indigo-600 rounded-full) calls router.push("/expense/add")
+- Pull-to-refresh: RefreshControl with local `refreshing` state; onRefresh calls await refetch() then setRefreshing(false)
+- Empty state: EmptyState component with emoji, message "Nessuna spesa ancora. Aggiungi la prima!" and inline add button
+- Loading skeleton: 5x ExpenseSkeleton rows shown when isLoading && !refreshing (avoids hiding list during pull-to-refresh)
+- contentContainerStyle: `{ flex: 1 }` when empty (enables EmptyState to fill and center), `{ paddingBottom: 100 }` otherwise (clears FAB)
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: bfabf76
+- **Learnings for future iterations:**
+  - FlatList ListEmptyComponent needs `contentContainerStyle={{ flex: 1 }}` to allow the empty component to fill the screen; use conditional contentContainerStyle based on `expenses.length === 0`
+  - Skeleton loading guard: `isLoading && !refreshing` — avoids replacing the list with skeleton during pull-to-refresh (list should stay visible while RefreshControl spinner shows)
+  - FAB z-index in RN: absolutely positioned View/Pressable inside the root View naturally renders on top of FlatList — no explicit zIndex needed
+  - BalanceSummary as an inline component (not a separate file) is valid for screen-specific display components that won't be reused elsewhere
+---
+
 ## 2026-02-24 - US-033
 - Created components/expenses/ExpenseCard.tsx
 - Props: expense: ExpenseRow (from @/hooks/useExpenses — has display fields description/category/date/split_type), onPress: () => void

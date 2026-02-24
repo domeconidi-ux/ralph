@@ -578,7 +578,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 34,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -595,7 +595,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 35,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
