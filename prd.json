@@ -629,7 +629,7 @@
         "npm test -- --passWithNoTests passa"
       ],
       "priority": 36.5,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

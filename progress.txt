@@ -483,6 +483,22 @@
   - Use DROP TRIGGER IF EXISTS before CREATE TRIGGER to make migrations idempotent
 ---
 
+## 2026-02-24 - REFACTOR-03
+- Audited all 4 components in components/expenses/: CategoryPicker, SplitSelector, ExpenseCard, BalanceSummary
+- Fixed naming uniformity: Props interfaces renamed to ComponentNameProps pattern and exported (ExpenseCard: Props→ExpenseCardProps, BalanceSummary: Props→BalanceSummaryProps, CategoryPicker: exported CategoryPickerProps)
+- Confirmed: zero StyleSheet.create usage in expenses components — all NativeWind className + inline style for dynamic hex values
+- Verified useExpenses.ts follows identical pattern to useCouple.ts: [entityType, contextId] queryKey, enabled: !!contextId, typed queryFn, exposes isLoading/refetch — consistent architecture
+- Verified splitAlgorithm.ts test coverage: 19 test cases across 4 functions (5+4+5+5) — well above minimum 8
+- Verified add.tsx mutation pattern: pseudo-transaction (insert expense → insert splits → delete expense on splits failure) — correct Supabase client pattern
+- Verified [id].tsx delete: single DELETE on expenses + ON DELETE CASCADE handles splits atomically — correct pattern
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- **Learnings for future iterations:**
+  - Props interface naming convention: `export interface ComponentNameProps` in every component — no bare `interface Props`; export enables consumers to import the type without coupling to the component internals
+  - expenses domain has NO Zustand store (unlike auth/couple) — data lives in TanStack Query cache only; balance is derived in the hook
+  - Supabase pseudo-transaction pattern is established: INSERT main row → INSERT dependent rows → on dependent error, DELETE main row (rollback); no Postgres RPC needed for MVP
+  - The `invalidate()` function in useExpenses is the standard pattern for post-mutation cache refresh — any screen that mutates expenses should call it
+---
+
 ## Codebase Patterns
 - Bash tool runs in MINGW64 on Windows but output is NOT returned to caller — redirect all output to files with `> file.log 2>&1` then read with Read tool
 - Use `&& echo "SUCCESS" >> out.log || echo "FAILED" >> out.log` pattern to capture exit status reliably
@@ -508,6 +524,10 @@
 - Form pattern (RHF + Zod): `useForm<T>({ resolver: zodResolver(schema) })` → `control, handleSubmit, formState: { errors, isSubmitting }` → Controller per field → apiError state for API-level errors
 - babel.config.js: use `api.cache(() => process.env.NODE_ENV)` (NOT api.cache(true)) when conditionally excluding presets by env; nativewind/babel must be skipped in Jest (NODE_ENV=test) as it requires react-native-worklets which is not installed
 - Jest test files in __tests__/: use relative imports (../../lib/X) for lib/ files — jest-expo does NOT auto-map @/ tsconfig path aliases
+- Props interface naming: always `export interface ComponentNameProps` — never bare `interface Props`; exporting enables type reuse by consumers
+- expenses domain has NO Zustand store — data lives only in TanStack Query cache; balance is derived synchronously in useExpenses hook from the cached list
+- Supabase pseudo-transaction: INSERT main → INSERT dependents → DELETE main on dependent error; ON DELETE CASCADE handles child row cleanup for deletes
+- useExpenses.invalidate() is the standard post-mutation cache refresh; any screen mutating expenses should call it after success
 ---
 
 # Ralph Progress Log
