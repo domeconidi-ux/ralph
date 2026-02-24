@@ -6,15 +6,18 @@ Read CLAUDE.md in the project root — it contains all architectural rules, stac
 
 ## Your Task
 
-1. Read the PRD at `ralph/prd.json`
+1. Read the PRD at `ralph/prd-current.json` (lean file: contains only the next story to implement + metadata)
+   - `completedStoryIds`: list of already-done stories (for context only)
+   - `remainingCount`: how many stories are left
+   - `currentStory`: the single story you must implement now
 2. Read the progress log at `ralph/progress.txt` (check Codebase Patterns section first)
 3. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
-4. Pick the **highest priority** user story where `passes: false`
-5. Implement that single user story
+4. Implement `currentStory` — this is already the highest-priority incomplete story
+5. Do NOT read `ralph/prd.json` directly — it is large and redundant with `prd-current.json`
 6. Run quality checks (see below)
 7. Update CLAUDE.md files if you discover reusable patterns (see below)
 8. If checks pass, commit ALL changes with message: `feat: [Story ID] - [Story Title]`
-9. Update the PRD to set `passes: true` for the completed story
+9. Update `ralph/prd.json` (the master file) to set `passes: true` for the completed story — NOT prd-current.json (that is regenerated automatically)
 10. Append your progress to `ralph/progress.txt`
 
 ## Quality Checks (Splova)
