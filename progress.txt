@@ -1,3 +1,22 @@
+## 2026-02-24 - US-026
+- Replaced stub app/(protected)/onboarding/health-score-result.tsx with full implementation
+- Fetches user's latest score with useQuery: `health_score_results` → `.eq("user_id", userId).order("created_at", desc).limit(1).maybeSingle()`
+- Fetches partner's latest score (if couple + partner in store): same table, `.eq("couple_id", coupleId).neq("user_id", userId).maybeSingle()` — returns null on error (non-fatal)
+- Count-up animation: Animated.Value(0) → animatedValue.addListener → setDisplayScore(Math.round(value)) → Animated.timing(toValue: myScore, duration: 1500, useNativeDriver: false).start()
+- Colored label badge: `backgroundColor: ${scoreInfo.color}22` (hex+alpha suffix) + matching text color — driven by getScoreLabel()
+- Couple score section: only shown when partnerResult?.score is non-null; uses getCoupleScore() + getScoreLabel() for its own label
+- CTA: router.replace("/(protected)/(tabs)/expenses") navigates to Spese tab
+- Loading state: ActivityIndicator shown while useQuery isLoading
+- TypeScript: SUCCESS (exit 0), Jest: 18/18 PASS
+- Committed: 0b20a84
+- **Learnings for future iterations:**
+  - Animated.timing with useNativeDriver: false is required when using addListener to update React state (not animating native props directly)
+  - `animatedValue.addListener(cb)` returns a string listener ID — store it for removeListener cleanup in useEffect return
+  - `.maybeSingle()` (not `.single()`) for queries that may return no row without throwing an error
+  - Hex color + alpha suffix pattern (`${color}22`) works in React Native style backgroundColor for subtle tinted backgrounds
+  - Partner score query: `.eq("couple_id", coupleId).neq("user_id", myId)` — requires couple_id to be set on the result row (done in quiz save logic)
+---
+
 ## 2026-02-24 - US-025
 - Updated app/(protected)/onboarding/health-score-quiz.tsx: added save + navigate logic on last answer
 - Created app/(protected)/onboarding/health-score-result.tsx: minimal stub for typed routes
