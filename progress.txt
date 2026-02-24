@@ -1,3 +1,21 @@
+## 2026-02-24 - US-037
+- Created supabase/migrations/005_goals.sql
+- Table goals: id (uuid PK), couple_id (FK couples CASCADE), name (text), target_amount (numeric(10,2) CHECK >0), current_amount (numeric(10,2) DEFAULT 0 CHECK >=0), deadline (date nullable), emoji (text), completed_at (timestamptz nullable), created_at
+- Table goal_contributions: id (uuid PK), goal_id (FK goals CASCADE), user_id (FK auth.users RESTRICT), amount (numeric(10,2) CHECK >0), note (text nullable), created_at
+- Performance indexes on goals(couple_id), goal_contributions(goal_id), goal_contributions(user_id)
+- RLS enabled on both tables; reuses get_user_couple_id() helper from 002_couples.sql
+- goals policies: SELECT/INSERT/UPDATE/DELETE all use `couple_id = public.get_user_couple_id()`
+- goal_contributions policies: SELECT/INSERT/UPDATE/DELETE use subquery `goal_id IN (SELECT id FROM public.goals WHERE couple_id = public.get_user_couple_id())`
+- Rollback section included as SQL comments
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: b97fbe4
+- **Learnings for future iterations:**
+  - goal_contributions has no direct couple_id — use subquery on goals table for RLS (same pattern as expense_splits → expenses)
+  - user_id FK uses ON DELETE RESTRICT to preserve contribution records when a user is deleted
+  - completed_at is nullable timestamptz (not date) to capture exact completion timestamp
+  - current_amount has CHECK >=0 (not >0) — goals with 0 progress are valid
+---
+
 ## 2026-02-24 - US-036
 - Created components/expenses/BalanceSummary.tsx
 - Props: balance: number, currentUserId: string, partnerName: string
