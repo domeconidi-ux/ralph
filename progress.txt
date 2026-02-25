@@ -1,3 +1,22 @@
+## 2026-02-25 - US-045
+- Replaced stub app/(protected)/(tabs)/profile.tsx with full implementation
+- Header: indigo-600 background with circular avatar (white circle, indigo initials), display_name, email
+- getInitials(): splits on whitespace, takes first char of first two words, falls back to first 2 chars of name
+- Sezione 'La mia coppia': couple name row, partner row (display_name or "Nessun partner ancora"), invite code row (only shown when unclaimed code exists)
+- Invite code fetched via useQuery(['invite_code', couple?.id]): queries invite_codes .is("used_by", null) .order("created_at", desc) .limit(1) .maybeSingle()
+- Tapping invite code row calls Clipboard.setStringAsync() + Alert.alert("Copiato!")
+- Sezione 'Privacy': two disabled/placeholder rows for "Export dati" and "Cancella account" with opacity 0.5
+- Logout: Pressable with red border/text → Alert.alert confirm dialog → supabase.auth.signOut() + useAuthStore.getState().logout()
+- Uses useAuthStore.getState().logout() (direct store access) since the component doesn't call useAuth() hook (avoids creating a duplicate Supabase auth subscription in a tab screen)
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: 1373d5c
+- **Learnings for future iterations:**
+  - Call `useAuthStore.getState().logout()` directly in event handlers instead of `useAuth()` hook — tab screens should not create additional Supabase auth subscriptions (useAuth is only for root layout)
+  - Invite code fetch: use `.is("used_by", null)` (not `.eq("used_by", null)`) for proper Supabase null comparison
+  - Avatar initials pattern: `getInitials(name)` → split on /\s+/, take first char of first two words; fallback to `.slice(0, 2)` for single-word names
+  - For disabled placeholder rows, use `style={{ opacity: 0.5 }}` + `disabled` prop rather than NativeWind opacity class for clarity
+---
+
 ## 2026-02-25 - US-044
 - Replaced stub app/(protected)/(tabs)/index.tsx with full Dashboard implementation
 - Header: indigo-600 background, 'Ciao, [nome]!' greeting (display_name from user.user_metadata or email prefix), formatted current date in Italian (weekday + day + month + year)
