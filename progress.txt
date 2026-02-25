@@ -1,3 +1,21 @@
+## 2026-02-25 - US-040
+- Created components/goals/GoalProgress.tsx — goal progress card component
+- Props: goal: GoalRow (from @/hooks/useGoals), onPress?: () => void
+- Animated progress bar: Animated.Value(0) → timing to percentage (duration 800ms, useNativeDriver: false) → interpolate to "0%"–"100%" string range
+- Progress color: green (#16A34A) for completed goals, indigo (#4F46E5) for active goals
+- 'Raggiunto! 🎉' badge: shown when goal.completed_at !== null; green tinted pill (#DCFCE7 bg, #15803D text)
+- Deadline badge: orange pill (#FFEDD5 bg, #C2410C text) with '{n}g rimasti' when !isCompleted && daysLeft >= 0 && daysLeft < 30
+- Amount display: `€{current.toFixed(2)} di €{target.toFixed(2)}` left-aligned, percentage right-aligned in progress color
+- overflow: "hidden" on progress bar container uses inline style (NativeWind overflow-hidden unreliable in RN)
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: faba1f2
+- **Learnings for future iterations:**
+  - GoalRow from @/hooks/useGoals is the correct type for goal display components (current_amount/target_amount are already Number() converted in the hook)
+  - Animated.View style with `width: barWidth` (an AnimatedInterpolation<string>) requires useNativeDriver: false — consistent with US-026 pattern
+  - For deadline badges, guard `daysLeft >= 0` to exclude already-passed deadlines from the "near deadline" indicator
+  - `components/goals/` directory created; future goal components go here (parallel to components/expenses/)
+---
+
 ## 2026-02-25 - US-039
 - Created app/(protected)/goals/create.tsx — "Nuovo obiettivo" form screen
 - Created lib/schemas/goal.ts — Zod schema (name required, target_amount > 0, deadline optional, emoji required)
