@@ -1,3 +1,39 @@
+## 2026-02-25 - US-044
+- Replaced stub app/(protected)/(tabs)/index.tsx with full Dashboard implementation
+- Header: indigo-600 background, 'Ciao, [nome]!' greeting (display_name from user.user_metadata or email prefix), formatted current date in Italian (weekday + day + month + year)
+- No-partner banner: amber-50/amber-200 border card with 'Invita il tuo partner' CTA navigating to /onboarding/create-couple; only shown when coupleStore.partner is null
+- Balance section: white card with BalanceSummary component; receives balance from useExpenses(), partnerName from coupleStore.partner?.display_name ?? 'Partner'
+- Ultime spese section: expenses.slice(0, 3) passed to ExpenseCard components; empty state with link to /expense/add
+- Il vostro obiettivo section: activeGoals[0] passed to GoalProgress; empty state with link to /goals/create; onPress navigates to /goals/${id}/contribute
+- All data (expenses + goals) loads in parallel via TanStack Query (two separate useQuery hooks, both fire simultaneously)
+- ScrollView with contentContainerStyle={{ paddingBottom: 100 }} for full vertical scroll with FAB clearance
+- Loading states: ActivityIndicator per section (expenses loading and goals loading checked independently)
+- user.user_metadata?.display_name cast as `string | undefined` — user_metadata is `{ [key: string]: any }` so explicit cast avoids implicit any
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: 7b8066d
+- **Learnings for future iterations:**
+  - Dashboard pattern: use two independent hooks (useExpenses + useGoals) — TanStack Query runs them in parallel automatically since both are useQuery calls in the same render
+  - user.user_metadata?.display_name is `any` typed — always cast to `string | undefined` with `as string | undefined` for TypeScript strict compliance
+  - ScrollView with heterogeneous sections (header + banner + 3 named sections) is the correct choice over FlatList for a dashboard layout
+  - No-partner check: `useCoupleStore(state => state.partner) === null` is the signal; partner is set by useCouple hook after fetching couple_members
+  - Empty states per section (not a single global empty state) give better UX — each section independently handles its own empty/loading state
+---
+
+## 2026-02-25 - US-043
+- Updated app/(protected)/(tabs)/_layout.tsx with 4 real tabs using Ionicons
+- Tab icons: Dashboard (home/home-outline), Spese (receipt/receipt-outline), Obiettivi (flag/flag-outline), Profilo (person/person-outline)
+- Active tab color: #4F46E5 (indigo-600, primary brand), inactive: #6B7280 (gray-500)
+- tabBarActiveTintColor + tabBarInactiveTintColor in screenOptions; focused prop drives filled vs outline icon variant
+- @expo/vector-icons is bundled with Expo SDK 54 — no separate install needed
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: 0e05e2c
+- **Learnings for future iterations:**
+  - @expo/vector-icons is included in Expo SDK 54 by default — no npm install required
+  - Tab icon pattern: `tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "icon" : "icon-outline"} size={24} color={color} />` — use `color` prop (provided by react-navigation) which already reflects active/inactive state
+  - tabBarActiveTintColor and tabBarInactiveTintColor in `screenOptions` applies to all tabs globally — more DRY than per-tab options
+  - Ionicons icon names for Splova tabs: home/home-outline, receipt/receipt-outline, flag/flag-outline, person/person-outline
+---
+
 ## 2026-02-25 - US-042
 - Created app/(protected)/goals/[id]/contribute.tsx — "Aggiungi contributo" screen
 - Added contributeSchema + ContributeFormData to lib/schemas/goal.ts
