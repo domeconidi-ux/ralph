@@ -1,3 +1,53 @@
+## 2026-02-25 - US-048
+- Created supabase/migrations/006_ocr_usage.sql: table ocr_usage (id, user_id FK auth.users RESTRICT, couple_id nullable FK couples SET NULL, created_at); indexes on user_id, couple_id, created_at; RLS enabled with select_own and insert_own policies
+- Created lib/featureGating.ts: exports canUseReceiptScanner(userId: string): Promise<boolean>
+- canUseReceiptScanner: computes startOfMonth = new Date(year, month, 1).toISOString(), queries ocr_usage with .select("id", { count: "exact", head: true }).eq("user_id").gte("created_at", startOfMonth), returns count < LIMITS.free.ocrScansPerMonth (30)
+- On DB error: returns false (deny access for safety)
+- LIMITS.free.ocrScansPerMonth = 30 sourced from @/constants (pricing.ts) — no magic number
+- TypeScript: SUCCESS (exit 0), Jest: 54/54 PASS (no new tests — featureGating imports Supabase client which requires RN runtime, not testable in Node/Jest)
+- **Learnings for future iterations:**
+  - featureGating.ts imports supabase client (which uses expo-secure-store); it is NOT a pure lib/ function and cannot be unit-tested in Jest without mocking — this is intentional; the module is a thin adapter between the DB and the app
+  - Supabase count query pattern: `.select("id", { count: "exact", head: true })` — `head: true` avoids fetching actual rows (only the count header); returns `{ count: number | null, error }` (not `data`)
+  - `new Date(year, month, 1)` gives the first day of the current month (month is 0-indexed in JS, same month value works)
+  - couple_id FK on ocr_usage uses ON DELETE SET NULL (not CASCADE) — usage records are preserved even if a couple is dissolved; user_id uses RESTRICT to preserve records when user is deleted
+---
+
+## 2026-02-25 - US-047
+- Created lib/piiPurifier.ts with purifyText(text: string): string
+- Four regex patterns: CODICE_FISCALE_REGEX, CREDIT_CARD_REGEX, IBAN_REGEX, PHONE_IT_REGEX
+- Codice fiscale: `/\b[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]\b/gi` (16-char Italian fiscal code format)
+- Credit card: `/\b\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{4}\b/g` (16 digits, optional grouping separators)
+- IBAN: alternation covering compact (`IT` + 25 alphanumeric) and space-grouped (`IT60 X054 2811 ...`) formats
+- Phone IT: covers mobile (3xx) and landline (0xx) with optional +39 country code and space/dash separators
+- All PII replaced with `[REDACTED]` constant
+- Created __tests__/lib/piiPurifier.test.ts with 15 test cases across 5 describe blocks
+- Tests cover: codice fiscale (3 cases), credit card (3), IBAN (3), phone (3), mixed text (3)
+- TypeScript: SUCCESS (exit 0), Jest: 54/54 PASS (15 new + 39 existing)
+- Committed: c40c2bb
+- **Learnings for future iterations:**
+  - Apply replacements in order: codice fiscale → IBAN → credit card → phone; IBAN must precede credit card to avoid partial matches on the digit segments of IBANs
+  - Italian IBAN has two display formats: compact (IT60X0542811101000000123456) and space-grouped (IT60 X054 2811 ...); use alternation to cover both
+  - `purifyText` is a pure function (no React Native or @/ deps) — directly importable in Jest without module mocking
+  - `[REDACTED]` as a named constant (not a magic string) makes the replacement marker easy to change and test against
+---
+
+## 2026-02-25 - US-046
+- Installed expo-camera ^17.0.10 and expo-image-picker ^17.0.10 (--legacy-peer-deps)
+- Updated app.json: added expo-camera plugin (cameraPermission → NSCameraUsageDescription on iOS, CAMERA on Android) and expo-image-picker plugin (photosPermission → NSPhotoLibraryUsageDescription on iOS)
+- Created hooks/useCameraPermissions.ts: custom hook wrapping Camera.getCameraPermissionsAsync() / Camera.requestCameraPermissionsAsync() from expo-camera v17
+- Hook returns: { status, isGranted, canAskAgain, isLoading, requestPermissions }
+- Used PermissionStatus enum from expo-modules-core for type safety (PermissionStatus.UNDETERMINED/GRANTED/DENIED)
+- getCameraPermissionsAsync() called on mount (useEffect) to check existing permissions before prompting
+- requestPermissions(): calls requestCameraPermissionsAsync() and updates status + canAskAgain; returns boolean
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: 66e91e8
+- **Learnings for future iterations:**
+  - expo-camera v17 exports `Camera` as an object (not a class) with static-like methods: `Camera.getCameraPermissionsAsync()`, `Camera.requestCameraPermissionsAsync()` — no `new Camera()` instantiation
+  - PermissionStatus enum lives in expo-modules-core (not expo-camera directly): `import { PermissionStatus } from "expo-modules-core"`
+  - expo-camera plugin in app.json automatically adds both NSCameraUsageDescription (iOS) and CAMERA permission (Android) — no manual infoPlist/android.permissions editing needed
+  - The built-in `useCameraPermissions` from expo-camera returns a tuple `[PermissionResponse | null, requestFn, getFn]`; our custom hook in hooks/ provides a named-property API more consistent with the project's hook patterns
+---
+
 ## 2026-02-25 - REFACTOR-04
 - Audited components/goals/GoalProgress.tsx vs components/expenses/: uniform structure confirmed (named export, exported Props interface, functional component, NativeWind classes, no StyleSheet.create)
 - Fixed props inconsistency: ExpenseCard.onPress changed from required to optional (`onPress?: () => void`) to match GoalProgress pattern; Pressable renders normally when onPress is undefined

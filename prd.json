@@ -807,7 +807,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 46,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -823,7 +823,7 @@
         "npx tsc --noEmit passa + npm test passa"
       ],
       "priority": 47,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -839,7 +839,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 48,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
