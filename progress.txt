@@ -1,3 +1,21 @@
+## 2026-02-25 - US-039
+- Created app/(protected)/goals/create.tsx — "Nuovo obiettivo" form screen
+- Created lib/schemas/goal.ts — Zod schema (name required, target_amount > 0, deadline optional, emoji required)
+- Also committed hooks/useGoals.ts (was untracked from previous story)
+- Emoji picker: 12 emojis in a flex-wrap grid (3 columns, 48×48 touchable squares); selected emoji gets indigo border + tinted background
+- Amount field: same decimal-pad + parseFloat pattern as add.tsx; large centered display
+- Deadline: optional TextInput (AAAA-MM-GG placeholder); empty string normalized to null before insert
+- Submit: inserts into `goals` table with couple_id from useCoupleStore; calls invalidate() then router.back()
+- Pattern: `deadline?.trim() || null` is the idiomatic way to convert optional empty-string form fields to DB null
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- Committed: 7c6d4ba
+- **Learnings for future iterations:**
+  - goals domain schema lives in lib/schemas/goal.ts (parallel to expense.ts, auth.ts, couple.ts)
+  - Emoji picker grid: `w-[22%]` + flex-wrap pattern from CategoryPicker works for any fixed-size item grid; use inline style for dynamic border colors
+  - `deadline?.trim() || null` handles both undefined (optional field) and empty string (user left blank) → DB null
+  - `await invalidate()` before router.back() ensures TanStack Query cache is refreshed before list screen regains focus
+---
+
 ## 2026-02-24 - US-037
 - Created supabase/migrations/005_goals.sql
 - Table goals: id (uuid PK), couple_id (FK couples CASCADE), name (text), target_amount (numeric(10,2) CHECK >0), current_amount (numeric(10,2) DEFAULT 0 CHECK >=0), deadline (date nullable), emoji (text), completed_at (timestamptz nullable), created_at
