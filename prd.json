@@ -783,6 +783,7 @@
       "id": "REFACTOR-04",
       "title": "Refactor: Goals + Dashboard Layer",
       "description": "Come sviluppatore, voglio consolidare goals e dashboard prima del layer OCR/camera.",
+      "passes": true,
       "acceptanceCriteria": [
         "Audit dei componenti components/goals/: verifica uniformità di struttura con components/expenses/",
         "Verifica che Dashboard (tabs/index.tsx) carichi dati in parallelo (useQueries o Promise.all)",
@@ -793,7 +794,6 @@
         "npm test -- --passWithNoTests passa"
       ],
       "priority": 45.5,
-      "passes": false,
       "notes": ""
     },
     {

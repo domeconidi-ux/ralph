@@ -1,3 +1,16 @@
+## 2026-02-25 - REFACTOR-04
+- Audited components/goals/GoalProgress.tsx vs components/expenses/: uniform structure confirmed (named export, exported Props interface, functional component, NativeWind classes, no StyleSheet.create)
+- Fixed props inconsistency: ExpenseCard.onPress changed from required to optional (`onPress?: () => void`) to match GoalProgress pattern; Pressable renders normally when onPress is undefined
+- Verified Dashboard (tabs/index.tsx): loads expenses + goals via two independent useExpenses()/useGoals() hooks — TanStack Query fires both in parallel automatically (no useQueries needed)
+- Verified tab bar (_layout.tsx): ACTIVE_COLOR #4F46E5 + INACTIVE_COLOR #6B7280, all Ionicons, zero StyleSheet.create
+- Updated Codebase Patterns with 4 new patterns: onPress convention, dashboard parallel loading, tab bar brand colors, components domain module pattern
+- TypeScript: SUCCESS (exit 0), Jest: 39/39 PASS
+- **Learnings for future iterations:**
+  - All interactive card components (ExpenseCard, GoalProgress) should declare `onPress?: () => void` as optional — Pressable handles undefined gracefully and callers always provide it in practice
+  - TanStack Query automatically parallelizes multiple useQuery hooks in the same render cycle — no need for useQueries for simple parallel fetch; use useQueries only when the number of queries is dynamic
+  - components/expenses/ and components/goals/ deliberately have no index.ts barrel — imports use direct path (@/components/goals/GoalProgress) for explicit dependency tracing
+---
+
 ## 2026-02-25 - US-045
 - Replaced stub app/(protected)/(tabs)/profile.tsx with full implementation
 - Header: indigo-600 background with circular avatar (white circle, indigo initials), display_name, email
@@ -676,6 +689,10 @@
 - expenses domain has NO Zustand store — data lives only in TanStack Query cache; balance is derived synchronously in useExpenses hook from the cached list
 - Supabase pseudo-transaction: INSERT main → INSERT dependents → DELETE main on dependent error; ON DELETE CASCADE handles child row cleanup for deletes
 - useExpenses.invalidate() is the standard post-mutation cache refresh; any screen mutating expenses should call it after success
+- UI component onPress convention: always declare `onPress?: () => void` (optional) in Props interface — both ExpenseCard and GoalProgress follow this; callers always provide it but the component renders without it too
+- Dashboard parallel data loading: two independent `useQuery` hooks (useExpenses + useGoals) in the same component fire in parallel automatically — no need for useQueries or Promise.all
+- Tab bar brand colors: ACTIVE_COLOR = "#4F46E5" (indigo-600), INACTIVE_COLOR = "#6B7280" (gray-500) — defined as constants at module level in (tabs)/_layout.tsx
+- components/expenses/ and components/goals/ follow identical module pattern: single .tsx file per component, named export, exported Props interface, NativeWind classes, inline style only for dynamic hex colors — no index.ts barrel in domain component directories
 ---
 
 # Ralph Progress Log
