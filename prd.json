@@ -908,7 +908,7 @@
         "npm test -- --passWithNoTests passa"
       ],
       "priority": 51.5,
-      "passes": false,
+      "passes": true,
       "notes": ""
     }
   ]

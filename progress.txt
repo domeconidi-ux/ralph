@@ -1,3 +1,17 @@
+## 2026-02-25 - REFACTOR-05
+- Final MVP audit: no TODO/FIXME in app code (all hits were in repository github/ reference repos — excluded by tsconfig/jest)
+- piiPurifier audit: purifyText() is called in hooks/useReceiptScanner.ts before JSON.parse() — the only OpenAI API call in the codebase; no other external API calls found
+- console.log audit: zero console.log/warn/error in app/, hooks/, lib/, store/ — only one console.warn in join-couple.tsx (non-fatal DB step) which was removed
+- RLS audit: 10/10 tables verified across 6 migration files: profiles, couples, couple_members, invite_codes, health_score_results, expenses, expense_splits, goals, goal_contributions, ocr_usage — all have `ENABLE ROW LEVEL SECURITY`
+- Updated Codebase Patterns in progress.txt with 8 new final learnings covering PII, RLS, console hygiene, GDPR consent, and OCR patterns
+- TypeScript: SUCCESS (exit 0), Jest: 54/54 PASS
+- **Learnings for future iterations:**
+  - No app code had TODO/FIXME comments — all were in reference repos (already excluded from TS/Jest); no changes needed
+  - The only external API call is OpenAI in useReceiptScanner.ts — piiPurifier is correctly applied there before JSON.parse
+  - console.warn with Supabase error messages (even non-PII) should be removed from production code — non-fatal fallback paths should use inline comments, not console output
+  - All 10 Supabase tables have RLS enabled; the pattern `ALTER TABLE public.<table> ENABLE ROW LEVEL SECURITY;` immediately after CREATE TABLE is the established convention across all 6 migrations
+---
+
 ## 2026-02-25 - US-051
 - Created app/(protected)/scan-receipt-review.tsx — OCR review + edit + save screen
 - Added `PendingReceipt` interface and `pendingReceipt`/`setPendingReceipt` to store/coupleStore.ts (same pattern as pendingInviteCode)
@@ -807,6 +821,13 @@
 - Tab bar brand colors: ACTIVE_COLOR = "#4F46E5" (indigo-600), INACTIVE_COLOR = "#6B7280" (gray-500) — defined as constants at module level in (tabs)/_layout.tsx
 - components/expenses/ and components/goals/ follow identical module pattern: single .tsx file per component, named export, exported Props interface, NativeWind classes, inline style only for dynamic hex colors — no index.ts barrel in domain component directories
 - Ephemeral cross-screen state (e.g. pendingInviteCode, pendingReceipt) lives in coupleStore as Zustand fields — cleared by the consumer after use; this avoids URL param size limits and keeps state strongly-typed
+- PII purification: piiPurifier.purifyText() MUST be called on all text sent to external APIs (OpenAI); apply on raw JSON string BEFORE JSON.parse() — Italian PII patterns don't overlap JSON structural characters
+- RLS enforcement: every Supabase table in every migration must have `ALTER TABLE public.<table> ENABLE ROW LEVEL SECURITY;` — 10/10 tables verified in final audit
+- No console.log/warn/error should log financial data, PII, or Supabase error messages containing user data — non-fatal DB errors should silently continue with an inline comment explaining why
+- OpenAI Vision API is the only external API in this codebase; all calls go through useReceiptScanner.ts — piiPurifier is applied there before JSON.parse
+- useRef(false) guard for one-shot effects on mount (e.g., OCR scan): `if (!data || hasRun.current) return; hasRun.current = true; doEffect()` — prevents double-call in React StrictMode
+- `takePictureAsync({ quality: 0.8, base64: true })` and `launchImageLibraryAsync({ base64: true })` both return base64 in separate fields — always guard `if (photo?.base64)` before using
+- GDPR consent for external data processing: show Alert.alert dialog before first capture; store consent in component state to avoid showing again in same session
 ---
 
 # Ralph Progress Log
