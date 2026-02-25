@@ -1,3 +1,66 @@
+## 2026-02-25 - US-051
+- Created app/(protected)/scan-receipt-review.tsx — OCR review + edit + save screen
+- Added `PendingReceipt` interface and `pendingReceipt`/`setPendingReceipt` to store/coupleStore.ts (same pattern as pendingInviteCode)
+- Updated app/(protected)/scan-receipt.tsx: capturePhoto now uses `base64: true` in takePictureAsync; openGallery uses `base64: true` in launchImageLibraryAsync; both store result in coupleStore.pendingReceipt + navigate to /scan-receipt-review instead of router.back()
+- Review screen flow: (1) reads pendingReceipt from store; (2) on mount, calls useReceiptScanner.scan(base64) via useRef guard to avoid double-call; (3) shows loading state with Image thumbnail while isScanning; (4) pre-fills form via setValue() when result arrives
+- Form: identical to add.tsx — RHF + zodResolver(expenseSchema), all fields editable (amount, description, CategoryPicker, date, SplitSelector)
+- Save logic: exact copy of add.tsx insert flow (insert expense → compute splits → insert splits → rollback on error) + invalidate() + router.replace("/(protected)/(tabs)/expenses") + setPendingReceipt(null)
+- "Riscan" button: setPendingReceipt(null) + router.back() → returns user to scan-receipt camera screen
+- Error handling: scanError shows amber warning banner ("verifica i dati"), keeps form usable for manual correction; apiError shows red banner on save failure
+- No new packages needed — Image from react-native displays local URIs directly; base64 captured by expo-camera/expo-image-picker options
+- TypeScript: SUCCESS (exit 0), Jest: 54/54 PASS
+- Committed: 1231699
+- **Learnings for future iterations:**
+  - `pendingReceipt` in coupleStore (uri + base64) is the pattern for ephemeral image state between scan and review screens — same as pendingInviteCode for cross-screen ephemeral state
+  - `takePictureAsync({ quality: 0.8, base64: true })` returns `{ uri, base64, width, height }` — base64 may be undefined if device fails, always guard with `if (photo?.base64)`
+  - `launchImageLibraryAsync({ base64: true })` adds base64 to `assets[0].base64` — same guard needed
+  - `useRef(false)` guard for one-shot OCR scan on mount: `if (!pendingReceipt || hasScanned.current) return; hasScanned.current = true; scan(...)` — prevents double-call in React StrictMode or re-renders
+  - `setValue("category", result.category.toLowerCase())` normalizes OCR category to match CATEGORIES ids (all lowercase)
+  - `useExpenses().invalidate()` should be called before router.replace when saving from review screen — ensures expenses list is refreshed before navigation
+---
+
+## 2026-02-25 - US-050
+- Created hooks/useReceiptScanner.ts — OCR receipt hook using OpenAI Vision API
+- Uses `fetch` (no OpenAI SDK) to call `https://api.openai.com/v1/chat/completions` with model `gpt-4o-mini`
+- Vision request: multimodal content array with `image_url` (data:image/jpeg;base64,${base64}) + `text` prompt in Italian
+- Structured Outputs: `response_format.type = "json_schema"` with strict schema for `{ amount, description, category, date, items[] }` — all fields required, `additionalProperties: false` at all levels
+- PII purification: `purifyText(content)` applied on the raw JSON string from OpenAI before `JSON.parse()` — safe since Italian PII patterns don't overlap JSON structural characters
+- OCR usage registration: `supabase.from("ocr_usage").insert({ user_id, couple_id })` after successful parse
+- API key: `process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? ""` — added placeholder entry to `.env.local` (gitignored)
+- Exposes: `scan(imageBase64: string)`, `isScanning`, `error`, `result`
+- Exported interfaces: `ReceiptItem` and `ReceiptData` for consumers
+- TypeScript: SUCCESS (exit 0), Jest: 54/54 PASS
+- Committed: da5a873
+- **Learnings for future iterations:**
+  - `fetch` to OpenAI API requires `Authorization: Bearer ${key}` header — no SDK needed for simple Vision calls
+  - OpenAI Structured Outputs `strict: true` requires: (1) all properties listed in `required`, (2) `additionalProperties: false` on every `object` (including nested), (3) no optional properties at schema level
+  - PII purification on the raw JSON string (before `JSON.parse`) is safe: Italian PII regex patterns (codice fiscale, IBAN, credit card, phone) are word-bounded and won't match JSON syntax characters
+  - `useCoupleStore((state) => state.couple)` selector pattern (vs destructuring) used to avoid subscribing to the entire store; consistent with other hooks that read couple_id
+  - `.env.local` is gitignored — only document the key name (placeholder entry with empty value); never expose real API keys
+---
+
+## 2026-02-25 - US-049
+- Created app/(protected)/scan-receipt.tsx — full receipt scanner screen
+- Checks feature gating on mount: canUseReceiptScanner(user.id) → isLimitReached state; shows upgrade message with "Scopri Premium" CTA if limit hit
+- Checks camera permissions via useCameraPermissions hook; shows "Consenti accesso" (Pressable → requestPermissions) if canAskAgain, else "Apri impostazioni" (Linking.openSettings())
+- Main camera view: CameraView from expo-camera with `facing="back"` and ref for takePictureAsync
+- Rectangular guide overlay: 4-panel semi-transparent layout (top/bottom flex:1 + left/right flex:1 flanking a 260×380 bordered rectangle); hint text in bottom panel
+- Header hidden via `<Stack.Screen options={{ headerShown: false }} />` for full-screen camera immersion
+- GDPR consent: Alert.alert dialog shown on first capture/gallery press; gdprConsented state prevents re-showing dialog in same session
+- Capture button: triggers cameraRef.current.takePictureAsync({ quality: 0.8 }); routes back on success
+- Gallery button: triggers ImagePicker.launchImageLibraryAsync({ mediaTypes: "images" as MediaType, quality: 0.8 }); routes back on non-canceled result
+- Close button: router.back() from camera view
+- Loading state: ActivityIndicator shown while permLoading || isCheckingLimit
+- TypeScript: SUCCESS (exit 0), Jest: 54/54 PASS
+- Committed: 76d0586
+- **Learnings for future iterations:**
+  - `Stack.Screen options={{ headerShown: false }}` inside the screen component (not layout) hides the expo-router header for that specific screen — correct pattern for full-screen camera/modal screens
+  - CameraView ref typed as `useRef<CameraView>(null)` — works correctly with TypeScript since CameraView is a React class component type
+  - ImagePicker v17 `mediaTypes` field accepts `"images" as ImagePicker.MediaType` (string literal cast) — the old `MediaTypeOptions.Images` enum is deprecated in v17
+  - Semi-transparent overlay "cutout" in React Native: 4-panel approach (top/left/right/bottom Views with backgroundColor rgba) is the reliable pattern — no CSS clip-path available in RN
+  - `canUseReceiptScanner` returns false on DB error (deny access) — calling it on mount with user.id is the correct pattern; wrap in useEffect([user])
+---
+
 ## 2026-02-25 - US-048
 - Created supabase/migrations/006_ocr_usage.sql: table ocr_usage (id, user_id FK auth.users RESTRICT, couple_id nullable FK couples SET NULL, created_at); indexes on user_id, couple_id, created_at; RLS enabled with select_own and insert_own policies
 - Created lib/featureGating.ts: exports canUseReceiptScanner(userId: string): Promise<boolean>
@@ -743,6 +806,7 @@
 - Dashboard parallel data loading: two independent `useQuery` hooks (useExpenses + useGoals) in the same component fire in parallel automatically — no need for useQueries or Promise.all
 - Tab bar brand colors: ACTIVE_COLOR = "#4F46E5" (indigo-600), INACTIVE_COLOR = "#6B7280" (gray-500) — defined as constants at module level in (tabs)/_layout.tsx
 - components/expenses/ and components/goals/ follow identical module pattern: single .tsx file per component, named export, exported Props interface, NativeWind classes, inline style only for dynamic hex colors — no index.ts barrel in domain component directories
+- Ephemeral cross-screen state (e.g. pendingInviteCode, pendingReceipt) lives in coupleStore as Zustand fields — cleared by the consumer after use; this avoids URL param size limits and keeps state strongly-typed
 ---
 
 # Ralph Progress Log
