@@ -67,7 +67,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -83,7 +83,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -99,7 +99,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -115,7 +115,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -131,7 +131,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -146,7 +146,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -161,7 +161,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -179,7 +179,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -195,7 +195,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -209,7 +209,7 @@
         "npx tsc --noEmit passa"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -223,7 +223,7 @@
         "npx tsc --noEmit passa senza errori"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": ""
     }
   ]
