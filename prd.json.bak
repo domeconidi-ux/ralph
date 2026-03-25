@@ -1,0 +1,72 @@
+{
+  "project": "Splova",
+  "branchName": "ralph/expenses",
+  "description": "Loop 3 — Tracciamento Spese: lista tab con saldo coppia, modifica spesa esistente, filtri e ricerca lato client",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Schermata Lista Spese (Tab)",
+      "description": "As a user, I want a dedicated expenses tab that shows all couple expenses in chronological order with a balance summary, so I can monitor shared spending at a glance.",
+      "acceptanceCriteria": [
+        "File `app/(protected)/(tabs)/expenses.tsx` creato",
+        "Header fisso con componente `BalanceSummary` usando `useExpenses().balance`",
+        "`FlatList` con `ExpenseCard` per ogni spesa, ordinata per `date DESC`",
+        "Tap su `ExpenseCard` naviga a `expense/[id]`",
+        "FAB '+' in basso a destra naviga a `expense/add`",
+        "Pull-to-refresh chiama `useExpenses().refetch()`",
+        "Empty state: se `expenses.length === 0 && !isLoading` → testo 'Nessuna spesa ancora. Aggiungi la prima!' con CTA coral",
+        "Loading skeleton: se `isLoading && expenses.length === 0` → 4 placeholder card con `bg-[#EBEBEB]` animate (niente ActivityIndicator)",
+        "Error state: se `error` → testo 'Errore nel caricamento. Riprova.' con bottone retry",
+        "Background schermata `bg-[#FFF8F6]` (mai bg-white)",
+        "Importi formattati con `toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })` → es. `87,50 €`",
+        "Icone Lucide React Native con `strokeWidth={1.5}` (mai Ionicons)",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "IMPORTANTE: Non ricostruire componenti già esistenti (ExpenseCard, BalanceSummary, useExpenses). Leggi prima i file esistenti per capire le interfacce."
+    },
+    {
+      "id": "US-002",
+      "title": "Modifica Spesa Esistente",
+      "description": "As a user, I want to edit an existing expense to fix mistakes in amount, description, category or date, without having to delete and re-create it.",
+      "acceptanceCriteria": [
+        "File `app/(protected)/expense/edit/[id].tsx` creato",
+        "Carica dati della spesa tramite `id` dal route param con query Supabase",
+        "Riusa componenti esistenti: `CategoryPicker`, `SplitSelector`, React Hook Form + Zod `expenseSchema`",
+        "Tutti i campi pre-compilati con valori attuali (amount, description, category, date, split_type)",
+        "Al submit: UPDATE `expenses` + delete + re-insert `expense_splits`",
+        "Dopo salvataggio: invalida cache TanStack Query con `queryClient.invalidateQueries` + naviga back a `expense/[id]`",
+        "Loading durante salvataggio: bottone mostra '•••' (niente ActivityIndicator)",
+        "Errori API mostrati come testo inline (niente Alert.alert())",
+        "Bottone 'Modifica' aggiunto in `app/(protected)/expense/[id].tsx` che naviga a `expense/edit/[id]`",
+        "Background `bg-[#FFF8F6]` su tutti i container",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Leggi `app/(protected)/expense/add.tsx` e `app/(protected)/expense/[id].tsx` prima di iniziare — riusa tutta la struttura form esistente."
+    },
+    {
+      "id": "US-003",
+      "title": "Filtri e Ricerca Spese",
+      "description": "As a user, I want to filter expenses by category or who paid, and search by description, so I can find specific expenses quickly.",
+      "acceptanceCriteria": [
+        "Barra di ricerca testo aggiunta in cima alla FlatList in `expenses.tsx` (sotto il balance header)",
+        "Ricerca filtra in tempo reale per `description` (case-insensitive, lato client su `useExpenses().expenses`)",
+        "Riga filtri orizzontale scrollabile sotto la ricerca con chip selezionabili per categoria (`constants/categories.ts`)",
+        "Chip 'Io' e '[Nome partner]' per filtrare per chi ha pagato (usa `useAuthStore` per `currentUserId` e `useCoupleStore` per partner)",
+        "Filtri multipli combinati con AND",
+        "Badge con numero filtri attivi visibile quando filtri sono attivi",
+        "Bottone 'Reset' visibile solo quando almeno un filtro è attivo",
+        "Empty state specifico per filtri attivi: 'Nessuna spesa corrisponde ai filtri'",
+        "Nessuna query Supabase aggiuntiva — tutta la logica è lato client",
+        "Chip filtri categoria mostrano emoji + nome dalla `constants/categories.ts`",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Tutta la logica filtro è in-memory su `expenses` già fetchate. Non aggiungere parametri a useExpenses o query Supabase."
+    }
+  ]
+}
