@@ -1,73 +1,94 @@
 {
   "project": "Splova",
-  "branchName": "ralph/dashboard-profile",
-  "description": "Loop 6 — Dashboard & Profilo: aggiunge totale spese mensile + breakdown top-3 categorie in Dashboard; rimuove Alert.alert() dal Profilo; aggiunge 'Lascia coppia' con conferma inline.",
+  "branchName": "ralph/ocr-receipt",
+  "description": "Loop 11 — OCR Scontrini: pipeline completa per fotografare scontrini e creare spese automaticamente via OpenAI GPT-4o-mini Vision. Include edge function backend, hook, schermata camera e schermata review/conferma.",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Dashboard — totale spese del mese corrente",
-      "description": "As a user, I want to see how much the couple spent this month so I can track spending at a glance.",
+      "title": "Edge Function process-receipt (Supabase Deno)",
+      "description": "As a developer, I need a backend endpoint that receives a receipt image and returns parsed expense data using OpenAI Vision.",
       "acceptanceCriteria": [
-        "In app/(protected)/(tabs)/index.tsx, aggiungere sezione 'Questo mese' tra il balance e le ultime spese",
-        "Calcolo client-side: filtrare expenses (da useExpenses) dove date.startsWith(new Date().toISOString().slice(0,7)) per ottenere le spese del mese corrente",
-        "Mostrare il totale sommando amount delle spese filtrate, formato it-IT DMMono: '1.234,50 €'",
-        "Skeleton: View h-8 bg-gray-100 rounded-lg w-1/2 visibile quando expensesLoading === true",
-        "Se nessuna spesa nel mese: mostrare '0,00 €' senza empty state speciale",
+        "Implementare `supabase/functions/process-receipt/index.ts` come Deno edge function",
+        "Accetta POST con body JSON `{ imageBase64: string, coupleId: string }`",
+        "Verifica JWT Supabase da Authorization header (usa createClient con auth header)",
+        "Legge `ocr_usage` per user_id + mese corrente (formato YYYY-MM): se count >= 30 risponde con status 429 e `{ error: 'rate_limit_exceeded' }`",
+        "Chiama OpenAI GPT-4o-mini con Vision e response_format JSON schema: `{ merchant: string, total: number, date: string, items: [{ name: string, amount: number }] }`",
+        "Fa upsert su `ocr_usage` incrementando count (INSERT ... ON CONFLICT DO UPDATE SET count = count + 1)",
+        "Risponde con `{ merchant, total, date, items }` in caso di successo",
+        "Risponde con `{ error: string }` e status 400/500 in caso di errore",
+        "Aggiunge CORS headers: Access-Control-Allow-Origin: *, Access-Control-Allow-Headers: authorization, content-type",
+        "Gestisce OPTIONS preflight con status 200",
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": true,
-      "notes": "useExpenses() è già chiamato in index.tsx e restituisce expenses: ExpenseRow[] con campi amount e date (YYYY-MM-DD). Nessuna nuova query Supabase — solo calcolo client-side."
+      "passes": false,
+      "notes": "Leggere repo 'receipt-ocr' in 'repository github'/receipt-ocr/ per pattern OCR. OPENAI_API_KEY disponibile come Deno.env.get('OPENAI_API_KEY'). Supabase service key via Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')."
     },
     {
       "id": "US-002",
-      "title": "Dashboard — breakdown top-3 categorie del mese",
-      "description": "As a user, I want to see which categories I spend most on this month so I can understand our habits.",
+      "title": "Hook useReceiptScanner con tipi e gestione errori",
+      "description": "As a developer, I need a typed hook to call the process-receipt edge function and handle all error cases.",
       "acceptanceCriteria": [
-        "Sotto il totale 'Questo mese' (US-001), aggiungere lista top-3 categorie per importo speso nel mese",
-        "Calcolo: raggruppare le spese del mese per category, sommare amount per gruppo, ordinare decrescente, prendere i primi 3",
-        "Ogni riga: emoji + nome categoria (da getCategoryById da @/constants) + importo DMMono formato it-IT a destra",
-        "Se meno di 3 categorie nel mese: mostrare solo quelle presenti",
-        "Skeleton: 3 righe View h-4 bg-gray-100 rounded durante loading",
-        "Se nessuna spesa nel mese: non mostrare la sezione breakdown (nasconderla completamente)",
+        "Riscrivere completamente `hooks/useReceiptScanner.ts` eliminando tutti gli errori TypeScript pre-esistenti",
+        "Esportare tipo `ReceiptScanResult = { merchant: string; total: number; date: string; items: Array<{ name: string; amount: number }> }`",
+        "Esportare tipo `ReceiptScanError = { type: 'rate_limit' | 'network' | 'parse' | 'unknown'; message: string }`",
+        "Esportare hook `useReceiptScanner()` che ritorna `{ scanReceipt: (imageBase64: string) => Promise<ReceiptScanResult>, isScanning: boolean, error: ReceiptScanError | null, reset: () => void }`",
+        "`scanReceipt` chiama `supabase.functions.invoke('process-receipt', { body: { imageBase64, coupleId } })` usando il coupleId da coupleStore",
+        "Se la response ha status 429: imposta error con type 'rate_limit' e message 'Hai raggiunto il limite di 30 scan/mese'",
+        "Se network error: type 'network'",
+        "Se parsing fallisce: type 'parse'",
+        "Zero errori TypeScript (strict)",
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "Usare getCategoryById(id) da @/constants/categories per risolvere emoji e nome. Se la categoria non è in CATEGORIES, mostrare emoji '📦' e id come fallback. Stesso array expenses filtrato per mese di US-001 — nessuna query aggiuntiva."
+      "passes": false,
+      "notes": "Il coupleStore è in store/coupleStore.ts e ha il campo couple: { id: string } | null. Usare useCoupleStore() per leggere couple.id."
     },
     {
       "id": "US-003",
-      "title": "Profilo — sostituisci Alert.alert() con feedback inline",
-      "description": "As a developer, I need to remove all Alert.alert() calls from profile.tsx and replace them with inline navy toast or teal feedback per design system.",
+      "title": "Schermata scan-receipt.tsx — camera e capture",
+      "description": "As a user, I want to take a photo of a receipt using my camera so I can create an expense automatically.",
       "acceptanceCriteria": [
-        "In app/(protected)/(tabs)/profile.tsx, rimuovere import Alert da react-native",
-        "handleCopyCode: sostituire Alert.alert('Copiato!', ...) con stato locale codeCopied: boolean; al tap impostare true + setTimeout 2000ms per tornare false; mostrare Body size='sm' teal '✓ Copiato' inline accanto al chip del codice quando codeCopied === true",
-        "handleLogout: rimuovere Alert.alert('Logout', ...); aggiungere stato showLogoutConfirm: boolean; il bottone Logout mostra la conferma inline (View rounded-2xl bordo coral sfondo white) con testo 'Sei sicuro di voler uscire?' + due Pressable: 'Annulla' (testo muted, chiude showLogoutConfirm) e 'Esci' (testo coral, chiama supabase.auth.signOut() + useAuthStore.getState().logout())",
-        "Nessun Alert importato nel file dopo la modifica",
+        "Riscrivere `app/(protected)/scan-receipt.tsx` usando `expo-camera` (CameraView + useCameraPermissions da 'expo-camera')",
+        "Se permesso non concesso: mostrare schermata con testo 'Servono i permessi della fotocamera' e bottone coral 'Concedi accesso' che chiama requestPermission()",
+        "Se permesso concesso: mostrare CameraView fullscreen con facing='back'",
+        "Overlay rettangolare guida centrato (View con border coral, opacity 0.6, larghezza 80%, aspect ratio 3/4)",
+        "Testo guida 'Inquadra lo scontrino' sopra il rettangolo, testo bianco, font DMSans",
+        "Bottone X (icona X Lucide, strokeWidth=1.5, bianco, 44dp) in alto a sinistra che chiama router.back()",
+        "Bottone capture in basso centrato: cerchio coral 64dp con icona Camera Lucide bianca",
+        "Al tap capture: ref.current.takePictureAsync({ base64: true, quality: 0.8 }), poi router.push('/scan-receipt-review') con params { imageUri: photo.uri, imageBase64: photo.base64 }",
+        "Durante capture: overlay skeleton bianco semitrasparente (opacity 0.5) sopra la camera",
+        "Zero errori TypeScript",
         "Typecheck passes"
       ],
       "priority": 3,
       "passes": false,
-      "notes": "Leggere profile.tsx per intero prima di modificare — ci sono già useState multipli. Il pattern di conferma inline è: stato showLogoutConfirm toggle il rendering di una View di conferma sopra o sotto il bottone Logout, non un overlay full-screen."
+      "notes": "expo-camera è già incluso in Expo SDK 54. CameraView ha metodo takePictureAsync via ref. Non usare react-native-vision-camera che richiede native build separato."
     },
     {
       "id": "US-004",
-      "title": "Profilo — 'Lascia coppia' con conferma inline",
-      "description": "As a user, I want to leave my couple so I can start fresh, while my partner retains access to shared history.",
+      "title": "Schermata scan-receipt-review.tsx — review, edit e salva spesa",
+      "description": "As a user, I want to review and confirm the OCR-extracted expense data before saving, so I can correct any errors.",
       "acceptanceCriteria": [
-        "In app/(protected)/(tabs)/profile.tsx, aggiungere Pressable 'Lascia coppia' nella sezione 'La mia coppia', visibile solo se couple !== null",
-        "Testo Body size='md' coral 'Lascia coppia', allineato a destra",
-        "Al tap: impostare stato showLeaveConfirm: boolean = true",
-        "View di conferma inline (stessa UI del logout di US-003): testo 'Sei sicuro? Il tuo partner conserverà l\\'accesso alle spese e agli obiettivi condivisi.', bottoni 'Annulla' (muted) e 'Lascia' (coral)",
-        "Al confirm 'Lascia': chiamare supabase.from('couple_members').delete().match({ user_id: user.id, couple_id: couple.id }); durante l'operazione bottone 'Lascia' mostra '•••' e disabled",
-        "Se DELETE ha successo: useCoupleStore.getState().reset() + router.replace('/onboarding/create-couple'); se quella route non esiste usare router.replace('/(public)/welcome')",
-        "Se DELETE ha errore: toast navy inline 'Errore. Riprova.' + chiudere la conferma",
+        "Riscrivere `app/(protected)/scan-receipt-review.tsx` — riceve params `{ imageUri: string, imageBase64: string }` via useLocalSearchParams()",
+        "All'mount chiama scanReceipt(imageBase64) da useReceiptScanner()",
+        "Durante loading (isScanning=true): mostrare skeleton — View h-48 bg-gray-100 rounded-2xl per immagine, sotto tre righe skeleton h-10 bg-gray-100 rounded-xl con mb-3",
+        "Quando dati arrivati: Image con source={{ uri: imageUri }} h-48 rounded-2xl mb-4 resizeMode='cover'",
+        "Form con React Hook Form + Zod schema: { amount: z.number().positive(), description: z.string().min(1), category: z.string(), date: z.string(), split_type: z.enum(['equal','proportional','exact']) }",
+        "Campo importo pre-popolato con result.total, stile DMMono, keyboardType='decimal-pad'",
+        "Campo descrizione pre-popolato con result.merchant",
+        "CategoryPicker pre-selezionata su 'shopping' come default (importare da components/expenses/CategoryPicker.tsx)",
+        "Campo data pre-popolato con result.date (o oggi se null), formato YYYY-MM-DD",
+        "SplitSelector con default 'equal' (importare da components/expenses/SplitSelector.tsx)",
+        "CTA coral 'Salva spesa' full-width: fa INSERT su expenses + expense_splits (stesso pattern di app/(protected)/expense/add.tsx), poi router.replace('/(protected)/(tabs)/expenses')",
+        "Se error.type === 'rate_limit': mostrare toast navy 'Limite scan raggiunto. Passa a Premium.' + bottone ghost 'Torna indietro' che chiama router.back()",
+        "Se error.type === 'network' | 'parse' | 'unknown': mostrare toast navy con messaggio errore + bottone ghost 'Riprova' che chiama reset() e rilancia scanReceipt",
+        "Zero errori TypeScript",
         "Typecheck passes"
       ],
       "priority": 4,
       "passes": false,
-      "notes": "couple_members ha colonne couple_id e user_id (vedi 002_couples.sql). useCoupleStore importabile da @/store/coupleStore — ha metodo reset(). Verificare che /onboarding/create-couple esista in app/(protected)/onboarding/ prima di usarlo come redirect."
+      "notes": "Guardare app/(protected)/expense/add.tsx per il pattern esatto di INSERT expenses + expense_splits. La logica split è in lib/splitAlgorithm.ts (calculateSplits). Il coupleId viene da useCoupleStore(). Il userId viene da useAuthStore()."
     }
   ]
 }
